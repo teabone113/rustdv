@@ -63,6 +63,21 @@ fixed-point settling, and selects the next deadline from both the RTL and VPI
 queues. `sim/run_verilator.sh` treats `REGRESSION: FAIL` or a missing verdict
 as a process failure because Verilator's `vpiFinish` path itself returns zero.
 
+## Callback handle ownership
+
+Icarus and Verilator agree on callback scheduling but not on the returned VPI
+handle after a one-shot fires. Icarus reaps the active callback object when the
+callback returns. Verilator removes the scheduled record but retains the
+separate handle object until the user releases it. RustDV therefore removes a
+fired one-shot from inside its trampoline, while the handle is valid on both
+simulators. Dropping an unfired or recurring callback retains the normal RAII
+remove behavior. Detaching a callback gives up only the Rust owner: a one-shot
+still self-cleans when it fires.
+
+`sim-callback-lifecycle-verilator` runs one million ReadOnly/NextTimeStep
+iterations and samples the simulator process after a warm-up period. It fails
+if callback RSS continues growing instead of reaching a plateau.
+
 Verilator references:
 
 - [VPI integration](https://verilator.org/guide/latest/connecting.html#verification-procedural-interface-vpi)

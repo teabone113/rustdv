@@ -81,7 +81,8 @@ regression.
 
 `.github/workflows/ci.yml` runs the full no-simulator regression plus a
 free-simulator matrix. Linux runs the Icarus entries and the Verilator FAST,
-scheduler, and mutation entries; macOS repeats the Verilator entries. CI builds
+scheduler, callback-lifecycle, and mutation entries; macOS repeats the
+Verilator entries. CI builds
 the checksum-pinned Verilator release recorded in `TOOLS.md`. Commercial
 simulators cannot run in public CI; license-holders run
 `sim/run_smoke.sh <sim>` locally.
@@ -139,13 +140,16 @@ TinyALU's XOR to an OR, requires two testbenches to **fail**, then requires
 both to pass again on the real RTL. A scoreboard that cannot fail is not a
 scoreboard.
 
-Verilator adds `sim-scheduler-verilator`, `sim-tinyalu-tb-verilator`,
-`sim-debug-verilator`, and `sim-mutation-verilator`. The scheduler entry
+Verilator adds `sim-scheduler-verilator`, `sim-callback-lifecycle-verilator`,
+`sim-tinyalu-tb-verilator`, `sim-debug-verilator`, and
+`sim-mutation-verilator`. The scheduler entry
 excludes only the two X/Z cases that cannot exist in a two-state model. It
 specifically proves a VPI-only timer keeps simulation alive and that a
 ReadWrite VPI write is re-evaluated before ReadOnly observes combinational RTL.
-The DEBUG entry requires the selected-internal control file to compile and a
-non-empty FST to be written.
+The callback-lifecycle entry repeatedly awaits ReadOnly and NextTimeStep for one
+million iterations, samples RSS after warm-up, and rejects linear growth from
+retained fired one-shot handles. The DEBUG entry requires the selected-internal
+control file to compile and a non-empty FST to be written.
 
 **Compile-fail — `rustdv/framework-tests/compile-fail/`.** Claims the book
 makes about what the compiler rejects. Each case asserts its `error[E….]`
@@ -175,7 +179,7 @@ Both are properties of the runner, not quirks of these tests:
 ### Adding a `test.json` option
 
 `test.json` accepts an `"env"` object whose keys are set in the test's
-environment. The six targeted entries use it for `RUSTDV_TESTCASE`.
+environment. The targeted simulator entries use it for `RUSTDV_TESTCASE`.
 
 ## Relationship to check.sh
 

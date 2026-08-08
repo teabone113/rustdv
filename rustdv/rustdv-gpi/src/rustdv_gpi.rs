@@ -5,8 +5,10 @@
 //!
 //! 1. Handles are opaque and non-null; fallible acquisition is `Result`.
 //! 2. Object-handle lifetime = simulation lifetime (freely `Copy`able IDs).
-//!    Callback handles invalidate on removal/fire — modeled by RAII
-//!    ([`CallbackHandle`]): dropping an unfired handle removes the callback.
+//!    Callback registrations are modeled by RAII ([`CallbackHandle`]):
+//!    dropping a live handle removes it, and fired one-shots remove themselves
+//!    from inside the trampoline while both supported simulators still accept
+//!    the registration handle.
 //! 3. Strings are copied at the boundary, every call.
 //! 4. No unwinding across FFI: every trampoline wraps the closure in
 //!    `catch_unwind`; panics are routed to the panic sink.
@@ -413,6 +415,11 @@ enum CbKind {
 
 struct CbShared {
     kind: CbKind,
+    /// Registration handle returned by vpi_register_cb. One-shots remove it
+    /// from inside the trampoline, while it is valid on both supported
+    /// simulators: Icarus reaps the active callback after it returns and
+    /// Verilator releases its separately-owned handle object immediately.
+    vpi_h: Cell<sys::vpiHandle>,
     /// True once the C-side Rc reference has been reclaimed (fired one-shot
     /// or removed callback). Guards against double-free.
     released: Cell<bool>,
@@ -426,23 +433,27 @@ struct CbShared {
 pub struct CallbackHandle {
     shared: Rc<CbShared>,
     raw: *const CbShared,
-    vpi_h: sys::vpiHandle,
+    detached: bool,
 }
 
 impl CallbackHandle {
-    /// Detach: let the callback live for the rest of the simulation
-    /// (recurring singletons like the phase hub).
-    pub fn forget(self) {
-        std::mem::forget(self);
+    /// Detach Rust ownership without leaking it. A detached one-shot keeps its
+    /// C-side reference until it fires and then self-cleans; a detached
+    /// recurring callback lives for the rest of the simulation.
+    pub fn forget(mut self) {
+        self.detached = true;
     }
 }
 
 impl Drop for CallbackHandle {
     fn drop(&mut self) {
+        if self.detached {
+            return;
+        }
         if !self.shared.released.get() {
             self.shared.released.set(true);
             unsafe {
-                sys::vpi_remove_cb(self.vpi_h);
+                sys::vpi_remove_cb(self.shared.vpi_h.get());
                 // Reclaim the C-side reference.
                 drop(Rc::from_raw(self.raw));
             }
@@ -465,6 +476,12 @@ extern "C" fn trampoline(cb: *mut sys::t_cb_data) -> i32 {
                 if !shared.released.get() {
                     shared.released.set(true);
                     let f = shared.once.borrow_mut().take();
+                    // The returned callback handle has different post-fire
+                    // ownership across simulators. Remove it while the active
+                    // callback is still valid on both: Icarus marks it for
+                    // self-reaping, while Verilator deletes the retained
+                    // VerilatedVpioReasonCb handle.
+                    sys::vpi_remove_cb(shared.vpi_h.get());
                     // Reclaim the C-side reference before running user code.
                     drop(Rc::from_raw(ud));
                     if let Some(f) = f {
@@ -498,6 +515,7 @@ fn register(
 ) -> CallbackHandle {
     let shared = Rc::new(CbShared {
         kind,
+        vpi_h: Cell::new(std::ptr::null_mut()),
         released: Cell::new(false),
         once: RefCell::new(once),
         repeat: RefCell::new(repeat),
@@ -524,7 +542,8 @@ fn register(
     };
     let vpi_h = unsafe { sys::vpi_register_cb(&mut cb) };
     assert!(!vpi_h.is_null(), "vpi_register_cb failed (reason {reason})");
-    CallbackHandle { shared, raw, vpi_h }
+    shared.vpi_h.set(vpi_h);
+    CallbackHandle { shared, raw, detached: false }
 }
 
 fn simtime(steps: u64) -> sys::t_vpi_time {
@@ -577,4 +596,54 @@ pub fn register_start_of_simulation(f: Box<dyn FnOnce()>) -> CallbackHandle {
 /// One-shot callback at end of simulation.
 pub fn register_end_of_simulation(f: Box<dyn FnOnce()>) -> CallbackHandle {
     register(CbKind::OneShot, Some(f), None, sys::cbEndOfSimulation, std::ptr::null_mut(), None)
+}
+
+#[cfg(test)]
+mod callback_tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    #[test]
+    fn fired_one_shot_releases_its_vpi_handle() {
+        rustdv_vpi_stubs::reset_callbacks();
+        let fired = Rc::new(Cell::new(false));
+        let fired_in_callback = fired.clone();
+        let handle = register_timer(1, Box::new(move || fired_in_callback.set(true)));
+
+        assert_eq!(rustdv_vpi_stubs::live_callback_handles(), 1);
+        rustdv_vpi_stubs::fire_next_callback();
+        assert!(fired.get());
+        drop(handle);
+
+        assert_eq!(rustdv_vpi_stubs::live_callback_handles(), 0);
+        rustdv_vpi_stubs::reset_callbacks();
+    }
+
+    #[test]
+    fn detached_one_shot_releases_shared_state_after_firing() {
+        rustdv_vpi_stubs::reset_callbacks();
+        let handle = register_timer(1, Box::new(|| {}));
+        let shared = Rc::downgrade(&handle.shared);
+
+        handle.forget();
+        assert!(shared.upgrade().is_some());
+        rustdv_vpi_stubs::fire_next_callback();
+
+        assert_eq!(rustdv_vpi_stubs::live_callback_handles(), 0);
+        assert!(shared.upgrade().is_none());
+        rustdv_vpi_stubs::reset_callbacks();
+    }
+
+    #[test]
+    fn callback_stub_refuses_to_reset_a_live_handle() {
+        rustdv_vpi_stubs::reset_callbacks();
+        let handle = register_timer(1, Box::new(|| {}));
+
+        let reset = catch_unwind(AssertUnwindSafe(rustdv_vpi_stubs::reset_callbacks));
+        assert!(reset.is_err());
+
+        drop(handle);
+        rustdv_vpi_stubs::reset_callbacks();
+    }
 }
