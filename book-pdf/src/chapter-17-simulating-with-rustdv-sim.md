@@ -10,7 +10,7 @@ Under cocotb sits a C++ layer called the GPI — the *Generic Procedural Interfa
 
 rustdv speaks to the simulator through the same procedural interfaces, and its layering copies cocotb's on purpose: a `-sys` crate of raw simulator bindings at the bottom, a safe wrapper crate above it that turns null pointers into `Err` and untracked lifetimes into owned types, and `rustdv-sim` — everything you met in Chapters 15 and 16 — on top.¹ The mechanical difference from cocotb is *what* the simulator loads: where cocotb's makefiles arranged for the simulator to start an embedded Python interpreter that imports your test module, a rustdv testbench **compiles to a shared library** that the simulator loads directly, the way it would load any VPI plugin. That is the story behind the two ceremony lines from Chapter 15: `vpi_bootstrap!()` exports the entry points the simulator calls at startup, and the chapter run scripts hand `vvp` (Icarus's runtime) our compiled library alongside the compiled design. No interpreter starts, because there is nothing to interpret; the testbench *is* native code, checked before the simulator ever ran.
 
-> ¹ On Icarus, today, the bottom crate binds VPI directly. rustdv's plan is to adopt cocotb's own GPI library — inheriting its VHPI/FLI reach — as the multi-simulator step; the safe layer above is shaped so that swap stays invisible to testbench code.
+> ¹ The bottom crate binds VPI directly. The same boundary now runs on Icarus and Verilator; adopting cocotb's GPI would still be the route to VHPI/FLI simulators, and the safe layer above is shaped so that swap stays invisible to testbench code.
 
 ## Verifying a counter
 

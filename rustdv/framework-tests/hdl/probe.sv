@@ -18,6 +18,11 @@ module probe;
    logic [3:0]  nibble;
    logic        flag;
 
+   // Combinational path used to prove that a VPI write in ReadWrite is
+   // re-evaluated before ReadOnly callbacks observe the design.
+   logic [7:0]  comb_in;
+   wire [7:0]   comb_out = comb_in ^ 8'hA5;
+
    // Never assigned anywhere: stays X for the whole simulation, which is what
    // the X/Z tests read.
    logic        never_driven;
@@ -34,7 +39,7 @@ module probe;
    // "no object named 'byte_sig' in scope 'probe'". Reading them all into one
    // wire nobody uses keeps them alive without driving them, which is the
    // whole point of declaring them.
-   wire keep_alive = ^{byte_sig, word_sig, nibble, flag,
+   wire keep_alive = ^{byte_sig, word_sig, nibble, flag, comb_in, comb_out,
                        never_driven, never_driven_bus};
 
 endmodule

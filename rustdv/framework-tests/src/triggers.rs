@@ -227,6 +227,23 @@ async fn trig_writes_are_scheduled_not_immediate(ctx: RustdvCtx) -> Result<(), T
     Ok(())
 }
 
+// A VPI write made in ReadWrite must reach the RTL and settle before
+// ReadOnly.  Verilator hosts have to perform the intervening eval explicitly;
+// without it this reads the previous value even though phase callbacks fire.
+#[rustdv::test]
+async fn trig_read_only_sees_settled_rtl(ctx: RustdvCtx) -> Result<(), TestError> {
+    let input = ctx.dut().signal("comb_in")?;
+    let output = ctx.dut().signal("comb_out")?;
+
+    input.set_u64(0x3C);
+    read_write().await;
+    read_only().await;
+
+    let got = output.get_u64().unwrap_or(0);
+    check!(got == (0x3C ^ 0xA5), "ReadOnly saw comb_out={got:#x} before RTL settled");
+    Ok(())
+}
+
 // ReadWrite and ReadOnly land inside the same time step; NextTimeStep does not.
 #[rustdv::test]
 async fn trig_phase_order_within_a_step(ctx: RustdvCtx) -> Result<(), TestError> {

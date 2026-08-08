@@ -12,9 +12,9 @@ The DUT is the same `tinyalu.sv` the earlier books verified — same protocol, s
 module tinyalu (input [7:0] A,
                 input [7:0] B,
                 input [2:0] op,
-                input clk,
                 input reset_n,
                 input start,
+                output bit clk,
                 output done,
                 output [15:0] result);
 ```

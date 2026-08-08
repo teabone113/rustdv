@@ -26,7 +26,8 @@ well.
    ```
    The repository pins its compiler in `rust-toolchain.toml`, so inside a
    clone `rustup` fetches the right one on its own.
-2. **Icarus Verilog** — the simulator rustdv currently supports:
+2. Install at least one simulator. **Icarus Verilog** is the four-state
+   reference and the source of the book's transcripts:
    ```sh
    sudo apt install iverilog     # Debian/Ubuntu
    brew install icarus-verilog   # macOS
@@ -36,14 +37,16 @@ well.
    The run scripts compile with `-g2012`, so you need a build with
    SystemVerilog-2012 support. Any current Icarus has it; the oss-cad-suite
    build is the one this project is tested against.
+   **Verilator** is the FAST two-state simulator. The repository and CI use
+   the pinned build described in `TOOLS.md`; `ci/install-verilator.sh` installs
+   it without root access once its build dependencies are present.
 3. Optional but recommended: **VS Code + rust-analyzer** (use model 1) or
    **Claude Code / Cowork** (use model 2), and **GTKWave** for waveforms.
 
-> Platform note: rustdv's simulator backend is VPI-based and is developed
-> and tested on Linux with Icarus. macOS generally works; Windows users
-> should work inside WSL. Verilator is linted against but not yet run as a
-> simulator, and commercial simulators are not supported today. `STATUS.md`
-> in the repository records what has actually been run, and where.
+> Platform note: rustdv's simulator backend is VPI-based. Icarus and
+> Verilator run on Linux and macOS; Windows users should work inside WSL
+> because Verilator's runtime VPI loader is POSIX-only. Commercial simulators
+> are not supported today. `STATUS.md` records what has actually been run.
 
 ## Step 1: Clone rustdv and prove your setup works
 
@@ -56,6 +59,7 @@ git clone https://github.com/rustdv/rustdv.git
 cd rustdv
 sim/run_smoke.sh icarus      # checks the simulator alone   → SMOKE: PASS
 sim/run_rustdv.sh            # full Rust testbench on TinyALU → REGRESSION: PASS
+sim/run_rustdv.sh release verilator # same testbench, FAST two-state backend
 cd rustdv && cargo test      # unit tests, no simulator      → all green
 ```
 
@@ -109,9 +113,10 @@ no Verilog testbench at all. The minimum is one crate with:
    writing any real verification code.
 3. **`sim/timescale.v`** — three lines; must be compiled first or Icarus
    defaults to 1-second precision and your nanosecond clock goes wrong.
-4. **`sim/run.sh`** — builds the crate, renames the `.so` to `.vpi`,
-   compiles your RTL, runs `vvp`. Adapt the template's three variables:
-   crate name, top module name, RTL file list.
+4. **`sim/run.sh`** — builds the crate and selects a simulator. The starter
+   template shows the Icarus reference flow; the repository's
+   `output/examples/sim-common/run_sim.sh` is the working dual-simulator
+   pattern and delegates Verilator to `sim/run_verilator.sh`.
 5. **Your RTL**, unmodified, in `hdl/`.
 
 Run `sim/run.sh`. When you see your smoke test pass, you have a live
@@ -122,13 +127,15 @@ repo, and the book's Interlude chapter walks through every file of it.
 
 Two tips for the growth phase:
 
-- Want waveforms? Add a `dump.v` next to your RTL and pass `-s dump` as a
+- Want Icarus waveforms? Add a `dump.v` next to your RTL and pass `-s dump` as a
   second top module to iverilog:
   ```verilog
   module dump;
     initial begin $dumpfile("waves.vcd"); $dumpvars(0, my_top); end
   endmodule
   ```
+  For Verilator, use DEBUG mode with a `.vlt` control file; it produces FST
+  without exposing every internal signal through VPI.
 - A test hangs? The run prints a seed (`RUSTDV_RANDOM_SEED=...`); re-run
   with the same seed and read the log from the top — a panic earlier in
   the log is the cause of a hang later in it, nine times out of ten.

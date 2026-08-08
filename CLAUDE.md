@@ -5,8 +5,9 @@ rustdv is a Rust hardware verification framework (a cocotb + pyuvm analog) by
 Ray Salemi, companion to the book *Rust for RTL Verification*. The repo holds
 two products (see TOUR.md for the tour):
 
-1. **rustdv** — the framework (crates in /rustdv), with a TinyALU regression
-   passing on Icarus Verilog.
+1. **rustdv** — the framework (crates in /rustdv), with the TinyALU regression
+   passing on Icarus and Verilator. Icarus remains the four-state/book reference;
+   Verilator is the FAST two-state backend (`TOOLS.md`).
 2. **"Rust for RTL Verification"** — chapters 1–40 plus an Interlude and four
    appendices in /book-pdf/src (mdBook), every figure verified running.
 
@@ -23,7 +24,7 @@ know where you are. Nothing in this repository's prose should answer that
 question.
 
 `output/.design-decisions.md` is the authoritative decision log — read its
-§0 (the mission and method) and CLAUDE.local.md before proposing anything
+§0 (the mission and method) before proposing anything
 architectural. The decisions that most shape new code: **D83b** (connection is
 a trait method, not a registry — if a mechanism works for a child but needs a
 second spelling for `self`, it has broken the UVM's uniformity), **D82b/D82c**

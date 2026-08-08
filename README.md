@@ -76,10 +76,11 @@ If you know the UVM, this is the whole translation table.
 
 ## Installation
 
-You need **Rust** and a simulator. rustdv is developed and tested against
-**Icarus Verilog**. This repository pins its toolchain in
+You need **Rust** and a simulator. rustdv runs against **Icarus Verilog** for
+four-state reference behavior and **Verilator** for fast two-state functional
+simulation. This repository pins its toolchain in
 [`rust-toolchain.toml`](rust-toolchain.toml), so `rustup` fetches the right
-compiler on its own.
+compiler on its own; [`TOOLS.md`](TOOLS.md) records the simulator contract.
 
 ```sh
 cargo add rustdv
@@ -124,11 +125,13 @@ from chapter 18 onward, and the shipped testbench for it is in
 
 ```sh
 sim/run_rustdv.sh
+sim/run_rustdv.sh release verilator
 ```
 
-That builds the testbench as a shared library, compiles the DUT with Icarus,
-and hands the library to `vvp`. There is no Verilog testbench: rustdv drives
-the top module directly.
+Both commands build the same testbench shared library and load it through VPI.
+The first uses Icarus and remains the reference for four-state behavior and
+the transcript below; the second builds the DUT with the shared Verilator host.
+There is no Verilog testbench: rustdv drives the top module directly.
 
 Two tests run. `RandomTest` sends random operands across every operation five
 times each; `MaxTest` sends `0xff op 0xff` once per operation. Here is the
@@ -776,6 +779,7 @@ asserted here.
 | [`output/examples/`](output/examples/README.md) | Every book figure as runnable code |
 | [`output/regression/`](output/regression/TESTING.md) | The regression system guarding all of it |
 | [`sim/`](sim/README.md) | TinyALU DUT, `run_rustdv.sh`, and simulator smoke tests |
+| [`TOOLS.md`](TOOLS.md) | Pinned simulator contract, visibility modes, tracing, and limitations |
 | [`skills/`](skills/) | AI verification skills: spec + RTL → testbench → verified coverage report |
 | [`docker/`](docker/) | Reproducible environment: Rust + Icarus + Verilator |
 | [`STATUS.md`](STATUS.md) | Implementation history and the deviations log |
@@ -786,7 +790,7 @@ asserted here.
 | | Status |
 |---|---|
 | Icarus Verilog | full simulation; runs in CI, and every transcript in the book comes from it |
-| Verilator | lints in CI |
+| Verilator | FAST two-state simulation, scheduler regression, mutation check, and FST DEBUG mode; runs in Linux/macOS CI |
 | VCS / Questa / Xcelium | same script (`sim/run_smoke.sh vcs\|questa\|xcelium`); licenses can't live in public CI, so license-holders run the identical regression locally |
 | EDA Playground | HDL side only — it has no Rust toolchain; see [sim/README.md](sim/README.md) |
 

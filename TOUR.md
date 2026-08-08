@@ -2,11 +2,12 @@
 
 *New here — human or AI? This is the walk-around. Ten minutes, and you'll
 know what this project is, what's been proven, and where everything lives.
-Last verified 2026-08-07; the proven claims below are checked by the
+Last verified 2026-08-08; the proven claims below are checked by the
 regression suite, not aspirational.*
 
 > **Both products are complete.** The framework is done — every chapter crate
-> green on Icarus, the three-tier test suite built on top. **The book is done
+> green on the Icarus reference, with the TinyALU, scheduler, and mutation
+> paths also green on Verilator. **The book is done
 > too:** every transcript is real simulator output, every ch15–40 listing is
 > checked against its crate, and the end-to-end read has run. The UVM
 > restoration that dominated this repo's history is finished; `#[component]`
@@ -14,8 +15,8 @@ regression suite, not aspirational.*
 > progress. What happens now is revision.
 >
 > **"Where the work stands", at the bottom of this file, is the live status.**
-> `output/.design-decisions.md` is the decision log; read its §0 and
-> CLAUDE.local.md before proposing anything architectural.
+> `output/.design-decisions.md` is the decision log; read its §0 before
+> proposing anything architectural.
 >
 > **No document here names a branch.** Branches are ephemeral; ask git.
 
@@ -26,7 +27,7 @@ pyuvm story retold with a compiler: a simulator-driven async executor,
 triggers, a UVM-style component methodology (ownership tree, typed
 configs, maker-closure factories, channels/analysis ports, the full
 sequencer handshake), running testbenches as native shared libraries
-loaded by Icarus Verilog over VPI. Zero external dependencies. **v0.1 is
+loaded by Icarus or Verilator over VPI. Zero Rust dependencies. **v0.1 is
 publicly live** (2026-08-06/07): `rustdv` 0.1.1 is published on crates.io,
 the `rustdv/rustdv` GitHub repo is public with Discussions on and
 Issues/PRs off, and the companion site is up at rustdv.org.
@@ -48,15 +49,18 @@ pre-push hook:
 
 - `sim/run_rustdv.sh` — the shipped TinyALU testbench ends `REGRESSION: PASS`
   (RandomTest: 20 compared, 0 mismatches, every op covered; MaxTest: 4/0). It
-  runs in the suite as `custom/sim-tinyalu-tb`, which asserts those counts.
+  runs in the suite on Icarus and Verilator, with both entries asserting those
+  counts. Icarus owns four-state/reference behavior; Verilator owns FAST
+  functional runs. `TOOLS.md` is the contract.
 - **Mutation-checked**: with the DUT's XOR deliberately corrupted to OR,
   the scoreboard flags every affected transaction and the regression
   fails; restored, it passes. The checking has teeth.
-- `output/regression/regress.py` — **green on both Linux and macOS/arm64**
-  (`--list` prints the current entry count; do not trust a number written in
-  prose). One package is quarantined in `regress.json`: `ch21_macros`, a macro
-  demonstration with no simulator test, which never comes off the list. Every
-  chapter crate ch15–ch39 runs.
+- `output/regression/regress.py` — the current tree is green on macOS/arm64,
+  including every Verilator entry. The Icarus-only entries were not rerun on
+  that machine because Icarus was absent; the Linux CI matrix is their next
+  gate. (`--list` prints the current entry count; do not trust a number written
+  in prose.) One package is quarantined in `regress.json`: `ch21_macros`, a
+  macro demonstration with no simulator test, which never comes off the list.
 - **Three tiers of framework test under the chapter runs** — no-simulator tests
   (`--suite unit`, ~2 s), targeted simulator tests in `rustdv/framework-tests/`
   plus `sim-mutation`, and compile-fail cases each asserting its `error[E….]`.
@@ -74,6 +78,7 @@ pre-push hook:
 | Why it's designed this way | `output/.design-decisions.md` — the authoritative decision log (§0 = mission + method). Internal: never cite it in reader-facing output. |
 | Runnable book figures | `/output/examples` (`README.md` has per-chapter run commands) |
 | The regression suite | `/output/regression/regress.py` (`--help` works; wired into pre-push) |
+| Simulator policy | `/TOOLS.md` (pinned tools, FAST/DEBUG visibility, FST, four-state boundary) |
 | Implementation history & the deviations log | `STATUS.md` (chronological, bottom-up) |
 | The book's prose pass | `book-pdf/FABLE.md` (the rules) and `book-pdf/chapter-notes.md` (one row per chapter). These supersede the older `fable-brief.md`, `notes-for-fable.md` and `dual-audience-style.md`. |
 | AI verification skills | `/skills` (spec+RTL → testbench → verified coverage report) |
@@ -226,8 +231,10 @@ cd output/examples && sim-common/run_sim.sh <crate_name> <top_module>
 ### Where the work stands — read this before proposing anything
 
 **Both products are complete, and the work now is revision.** Every chapter
-crate ch15–ch39 runs on Icarus; `tinyalu_tb` runs on the same machinery as the
-chapters and is in the suite as `custom/sim-tinyalu-tb`. The only quarantined
+crate ch15–ch39 runs on Icarus; `tinyalu_tb` also runs on Verilator through the
+shared scheduler host and is mutation-checked on both. The Verilator-compatible
+framework probe covers VPI-only timers and ReadWrite-to-ReadOnly RTL settling;
+the two X/Z cases remain Icarus-only. The only quarantined
 package is `ch21_macros`, a macro demonstration with no simulator test, marked
 `no_sim_test` in `regress.json`; it never comes off the list. `.design-decisions.md`
 §16 is empty. **D116/D117 landed on 2026-08-05**: the analysis trait is
@@ -242,8 +249,8 @@ code job is queued. **The final
 publication sweep of the manuscript ran on 2026-08-05** — TOC titles, appendix
 cross-references and chapter pointers verified against the crates, spelling and
 figure-reference conventions unified — and `book-pdf/FABLE.md`'s top notes are
-satisfied (marked done in place). Verified on Linux; macOS confirmation is
-Ray's.
+satisfied (marked done in place). D119's Verilator integration is verified on
+macOS/arm64; Linux CI and an Icarus transcript rerun remain pending.
 
 **The test suite**, in three tiers under the chapter runs
 (`output/regression/TESTING.md` is the operating manual, including the two

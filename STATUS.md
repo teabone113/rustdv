@@ -1277,3 +1277,47 @@ all of them would be ignored.
 
 Full regression 240/0, both drift checks and `index-decisions.py` green, **on
 the Linux sandbox; not yet verified on macOS/arm64.**
+
+## 2026-08-08 — D119: Verilator becomes the FAST simulator
+
+The same Rust cdylib now runs against Icarus and Verilator. Icarus remains the
+four-state framework reference and the source of exact book transcripts;
+Verilator is the FAST two-state functional backend. The durable tool and mode
+contract is `TOOLS.md`.
+
+`sim/verilator_main.cpp` is product scheduler code, not generated build
+plumbing. Verilator's generated loop stopped at time zero when the RTL had no
+timed event even though `VerilatedVpi::cbNextDeadline()` had a live Rust timer.
+The shared host now chooses the earlier RTL/VPI deadline and enforces timed
+callbacks → eval/value callbacks → ReadWrite → re-evaluate to a fixed
+point → ReadOnly. It also handles start/end callbacks, `final()`,
+`vpiFinish`, no-event termination, an iteration bound, and optional FST.
+
+All builds use `--prefix Vrustdv_dut` and Verilator 5.050's POSIX runtime VPI
+loader. `sim/run_verilator.sh` rejects older versions, `ci/install-verilator.sh`
+checksum-pins the release, and Linux/macOS CI build and exercise it. Because
+Verilator returns zero after `vpiFinish` even for a printed failing regression,
+the wrapper explicitly rejects `REGRESSION: FAIL` and missing verdicts.
+
+Visibility has three modes: FAST generates a `.vlt` file for only the selected
+top module's ports; DEBUG adds explicitly selected internals plus FST; the
+small framework regression alone uses `--public-flat-rw`. TinyALU's internally
+generated clock became an output port because every BFM already consumes it as
+part of the DUT interface.
+
+Permanent coverage added:
+
+- TinyALU FAST: 20 compared / 0 mismatches, 4 / 0, all operations covered,
+  the same 820 ns total as the Icarus reference.
+- Scheduler probe: 34 Verilator-compatible tests, including a VPI-only timer
+  with no RTL time source and a ReadWrite write observed through combinational
+  RTL in ReadOnly. The two X/Z tests remain Icarus-only by design.
+- Mutation: the XOR-to-OR corruption is caught by both ch34 and ch39
+  scoreboards under Verilator, and both pass after restoring the real RTL.
+- DEBUG: the TinyALU control file exposes four selected internals and produced
+  a non-empty FST on macOS/arm64.
+
+Local verification on macOS/arm64 used Homebrew Verilator 5.050. The full
+regression is green; its Icarus-only entries and transcript rerun skipped
+because Icarus is not installed on this Mac. Linux and the new CI matrix remain
+unverified until GitHub runs the workflow.
