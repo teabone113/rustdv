@@ -8,9 +8,13 @@ members = [
     "rustdv/rustdv-methodology",
     "rustdv/rustdv-macros",
     "rustdv/rustdv-vpi-stubs",
+    "rustdv/rustdv-cycle",
     "rustdv/rustdv-runner",
     "rustdv/tinyalu_tb",
     "rustdv/framework-tests",
+    "rustdv/benchmarks/stream-model",
+    "rustdv/benchmarks/stream-vpi",
+    "rustdv/benchmarks/stream-cycle",
 ]
 # Preserve the previous behavior of running an unqualified Cargo command from
 # the workspace root against the rustdv facade crate. Use `--workspace` to

@@ -1,0 +1,98 @@
+{
+  "configuration": {
+    "inject_error": false,
+    "native": true,
+    "repeats": 3,
+    "seed": 1,
+    "threads": 1,
+    "transactions": 100000
+  },
+  "git_revision": "3038cdd27a19d48b0de467ac7471e431e5016e07",
+  "machine": "arm64",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.11.7",
+  "results": {
+    "cocotb": {
+      "backend": "cocotb",
+      "cycles": 121103,
+      "digest": "070d8652638223bf",
+      "median_cycles_per_s": 23442.357,
+      "median_elapsed_s": 5.165990666,
+      "samples": [
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 23259.602,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 5.206580958,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 23442.357,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 5.165990666,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 23851.064,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 5.077467458,
+          "status": "pass",
+          "transactions": 100000
+        }
+      ],
+      "status": "pass",
+      "transactions": 100000
+    },
+    "rustdv-vpi": {
+      "backend": "rustdv-vpi",
+      "cycles": 121103,
+      "digest": "070d8652638223bf",
+      "median_cycles_per_s": 205293.364,
+      "median_elapsed_s": 0.589902167,
+      "samples": [
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 205095.303,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.590471834,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 206676.81,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.5859535,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 205293.364,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.589902167,
+          "status": "pass",
+          "transactions": 100000
+        }
+      ],
+      "status": "pass",
+      "transactions": 100000
+    },
+    "speedups": {
+      "rustdv-vpi_vs_cocotb": 8.75736872363133
+    }
+  },
+  "schema": "rustdv.stream-throughput-benchmark/v1",
+  "timestamp_utc": "2026-08-08T23:32:29.851726+00:00",
+  "verilator": "Verilator 5.050 2026-07-01 rev vUNKNOWN-built20260701"
+}

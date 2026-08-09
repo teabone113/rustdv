@@ -1,0 +1,10 @@
+[package]
+name = "rustdv-cycle"
+version = "0.1.0"
+edition = "2021"
+description = "Backend-neutral cycle-model contract and direct Verilator C ABI for rustdv."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rustdv/rustdv"
+
+[lib]
+path = "src/rustdv_cycle.rs"

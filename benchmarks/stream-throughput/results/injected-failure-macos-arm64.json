@@ -1,0 +1,76 @@
+{
+  "cocotb": "2.0.1",
+  "configuration": {
+    "acceptance": false,
+    "cocotb_opt": "o3",
+    "inject_error": true,
+    "measurement": "median simulator/testbench elapsed time; build excluded",
+    "minimum_cpp_fraction": 0.75,
+    "minimum_direct_speedup": 10.0,
+    "native": true,
+    "repeats": 1,
+    "rustdv_opt": "o3",
+    "seed": 1,
+    "threads": 1,
+    "transactions": 1000,
+    "visibility": "top-level ports only"
+  },
+  "cpu_model": "Apple M1 Pro",
+  "cxx": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+  "git_revision": "3038cdd27a19d48b0de467ac7471e431e5016e07",
+  "machine": "arm64",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.11.7",
+  "results": {
+    "cocotb": {
+      "samples": [
+        {
+          "backend": "cocotb",
+          "message": "AssertionError:payload mismatch for transfer 126: got data=0x633def2a683630d2 id=0x007e last=0 user=0xf8",
+          "status": "fail",
+          "transactions": 1000
+        }
+      ],
+      "status": "expected-failure"
+    },
+    "cpp-direct": {
+      "samples": [
+        {
+          "backend": "cpp-direct",
+          "message": "payload mismatch",
+          "status": "fail",
+          "transactions": 1000
+        }
+      ],
+      "status": "expected-failure"
+    },
+    "rustdv-direct": {
+      "samples": [
+        {
+          "backend": "rustdv-direct",
+          "message": "payload mismatch for transfer 126: got data=0x633def2a683630d2 id=0x007e last=0 user=0xf8; expected data=0x633def2a683630d3 id=0x007e last=0 user=0xf8",
+          "status": "fail",
+          "transactions": 1000
+        }
+      ],
+      "status": "expected-failure"
+    },
+    "rustdv-vpi": {
+      "samples": [
+        {
+          "backend": "rustdv-vpi",
+          "message": "payload mismatch for transfer 126: got data=0x633def2a683630d2 id=0x007e last=0 user=0xf8; expected data=0x633def2a683630d3 id=0x007e last=0 user=0xf8",
+          "status": "fail",
+          "transactions": 1000
+        }
+      ],
+      "status": "expected-failure"
+    }
+  },
+  "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "schema": "rustdv.stream-throughput-benchmark/v1",
+  "source_diff_sha256": "8b029bf98314c6659d5310e5d6ff524053d1018f458f97dbd09ca9cc61354e86",
+  "timestamp_utc": "2026-08-09T00:44:15.812060+00:00",
+  "verilator": "Verilator 5.050 2026-07-01 rev vUNKNOWN-built20260701",
+  "working_tree_dirty": true
+}

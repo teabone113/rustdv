@@ -21,6 +21,9 @@
 //! ```
 
 // --- sub-crates, re-exported whole for power users -------------------------
+mod cycle_vpi;
+
+pub use rustdv_cycle as cycle;
 pub use rustdv_gpi as gpi;
 pub use rustdv_runner as runner;
 pub use rustdv_sim as sim;
@@ -40,6 +43,8 @@ pub use rustdv_sim::{first, join};
 
 // --- the curated surface ----------------------------------------------------
 pub use rustdv_runner::{TEST_REGISTRATIONS, TestRegistration};
+pub use rustdv_cycle::{CycleAbiHeader, CycleAbiInfo, CycleModel, CycleStatus, CYCLE_ABI_VERSION};
+pub use cycle_vpi::run_cycle_model_vpi;
 
 pub use rustdv_sim::handle::top_module;
 pub use rustdv_sim::log;
@@ -83,7 +88,7 @@ pub mod prelude {
     pub use crate::log;
     pub use crate::{
         Active, AggregateHandle, AnalysisBus, BigUint, CheckSink, Clock, Component, ComponentNode,
-        ConfigDb, Either, Event, Factory, GetPort, HandleChildren, HandleError, HandleEvent,
+        ConfigDb, CycleModel, CycleStatus, Either, Event, Factory, GetPort, HandleChildren, HandleError, HandleEvent,
         HierarchyHandle, Lock, Logic, LogicArray, LogicHandle, NullTrigger, ObjectionGuard,
         PeekPort, PortName, PortOwner, PublishPort, PutPort, Queue, RealHandle, Receiver, Rng,
         RustdvComp, RustdvCtx, RustdvSeq, RustdvShared, Sender, SeqCtx, SeqError, SeqItem,

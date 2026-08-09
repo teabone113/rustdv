@@ -1,0 +1,14 @@
+{
+  "comment": "Generated direct-cycle Verilator bindings must match RTL metadata, be ABI-compatible and memory-stable, preserve transactions, and propagate a deliberately injected protocol-data failure through process status.",
+  "cmd": ["bash", "output/regression/tests/sim-cycle-verilator/run.sh"],
+  "cwd": ".",
+  "skip_if_missing": "verilator",
+  "expect_exit": 0,
+  "timeout": 600,
+  "expect_in_output": [
+    "BENCHMARK: PASS backend=rustdv-direct transactions=1000000",
+    "CYCLE RSS: warmup_cycle=100000",
+    "CYCLE FAILURE: PASS",
+    "CYCLE ABI: PASS"
+  ]
+}
