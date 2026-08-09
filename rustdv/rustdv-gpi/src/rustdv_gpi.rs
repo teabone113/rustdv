@@ -125,7 +125,11 @@ impl AnyHandle {
             sys::vpiNet | sys::vpiReg | sys::vpiIntegerVar | sys::vpiPort | sys::vpiMemory
             | sys::vpiLongIntVar | sys::vpiShortIntVar | sys::vpiIntVar | sys::vpiByteVar
             | sys::vpiEnumVar | sys::vpiBitVar => {
-                AnyHandle::Logic(LogicHandle { h })
+                // Signal width is immutable for the lifetime of a VPI
+                // object. Cache it at discovery so every value read/write
+                // does not pay for another vpi_get(vpiSize) crossing.
+                let width = h.get(sys::vpiSize).max(0) as u32;
+                AnyHandle::Logic(LogicHandle { h, width })
             }
             _ => AnyHandle::Other(h),
         }
@@ -234,6 +238,7 @@ impl HierarchyHandle {
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct LogicHandle {
     h: ObjHandle,
+    width: u32,
 }
 
 impl LogicHandle {
@@ -244,7 +249,7 @@ impl LogicHandle {
         self.h.get_str(sys::vpiFullName)
     }
     pub fn size(&self) -> u32 {
-        self.h.get(sys::vpiSize).max(0) as u32
+        self.width
     }
 
     /// Current value as a binary string, e.g. "0101", "xxxx".
@@ -272,16 +277,39 @@ impl LogicHandle {
     /// Current value as u64; `Err` if any bit is x/z (design-doc §0.6:
     /// conversion failures are Results, not exceptions).
     pub fn get_u64(&self) -> Result<u64, ValueError> {
-        let s = self.get_binstr();
-        let mut v: u64 = 0;
-        for c in s.chars() {
-            match c {
-                '0' => v <<= 1,
-                '1' => v = (v << 1) | 1,
-                _ => return Err(ValueError::FourState(s)),
-            }
+        let width = self.size().max(1);
+        if width > 64 {
+            return Err(ValueError::Width {
+                want: width,
+                have: 64,
+            });
         }
-        Ok(v)
+        let mut val = sys::t_vpi_value {
+            format: sys::vpiVectorVal,
+            value: sys::u_vpi_value_union {
+                vector: std::ptr::null_mut(),
+            },
+        };
+        unsafe {
+            sys::vpi_get_value(self.h.0, &mut val);
+            let words = val.value.vector;
+            if words.is_null() {
+                return Ok(0);
+            }
+            let word_count = width.div_ceil(32) as usize;
+            let mut result = 0u64;
+            for index in 0..word_count {
+                let word = *words.add(index);
+                if word.bval != 0 {
+                    return Err(ValueError::FourState(self.get_binstr()));
+                }
+                result |= (word.aval as u64) << (index * 32);
+            }
+            if width < 64 {
+                result &= (1u64 << width) - 1;
+            }
+            Ok(result)
+        }
     }
 
     fn put_binstr_flags(&self, bin: &str, flags: i32) {
@@ -295,16 +323,42 @@ impl LogicHandle {
         }
     }
 
+    fn put_vector_words(&self, words: &mut [sys::t_vpi_vecval]) {
+        let mut val = sys::t_vpi_value {
+            format: sys::vpiVectorVal,
+            value: sys::u_vpi_value_union {
+                vector: words.as_mut_ptr(),
+            },
+        };
+        unsafe {
+            sys::vpi_put_value(self.h.0, &mut val, std::ptr::null_mut(), sys::vpiNoDelay);
+        }
+    }
+
     /// Immediate (NoDelay) write of an integer value, zero-extended /
     /// truncated to the signal width. This is the "setimmediatevalue"
     /// analog; scheduled writes are layered above (design-doc §4.1(4)).
     pub fn set_u64_now(&self, v: u64) {
-        let w = self.size().max(1) as usize;
-        let mut s = String::with_capacity(w);
-        for i in (0..w).rev() {
-            s.push(if (v >> i) & 1 == 1 { '1' } else { '0' });
+        let width = self.size().max(1);
+        let word_count = width.div_ceil(32) as usize;
+        if word_count <= 2 {
+            let mut words = [
+                sys::t_vpi_vecval {
+                    aval: v as u32,
+                    bval: 0,
+                },
+                sys::t_vpi_vecval {
+                    aval: (v >> 32) as u32,
+                    bval: 0,
+                },
+            ];
+            self.put_vector_words(&mut words[..word_count]);
+        } else {
+            let mut words = vec![sys::t_vpi_vecval::default(); word_count];
+            words[0].aval = v as u32;
+            words[1].aval = (v >> 32) as u32;
+            self.put_vector_words(&mut words);
         }
-        self.put_binstr_flags(&s, sys::vpiNoDelay);
     }
 
     /// Immediate write of a 4-state value.
@@ -645,5 +699,25 @@ mod callback_tests {
 
         drop(handle);
         rustdv_vpi_stubs::reset_callbacks();
+    }
+}
+
+#[cfg(test)]
+mod handle_tests {
+    use super::*;
+
+    #[test]
+    fn signal_width_is_cached_when_the_handle_is_classified() {
+        rustdv_vpi_stubs::reset_property_gets();
+        let raw = 1usize as sys::vpiHandle;
+        let AnyHandle::Logic(signal) = AnyHandle::classify(ObjHandle(raw)) else {
+            panic!("stub object was not classified as a signal");
+        };
+
+        assert_eq!(signal.size(), 37);
+        assert_eq!(signal.size(), 37);
+        assert_eq!(rustdv_vpi_stubs::property_get_count(sys::vpiType), 1);
+        assert_eq!(rustdv_vpi_stubs::property_get_count(sys::vpiSize), 1);
+        rustdv_vpi_stubs::reset_property_gets();
     }
 }

@@ -162,6 +162,41 @@ Every message carries the component's hierarchical path —
 `RandomTest.inner.env.scoreboard` — the same way `uvm_test_top.env.scoreboard`
 does.
 
+## Cycle-oriented Verilator FAST path
+
+The portable coroutine/VPI backend remains the default and is the right path
+for event-driven or four-state-sensitive verification. For long synchronous
+Verilator runs, `rustdv-cycle` supplies a second contract: one Rust call per
+clock with plain input/output values.
+
+```rust
+impl CycleModel<CycleInputs, CycleOutputs> for MyModel {
+    fn step(
+        &mut self,
+        inputs: &CycleInputs,
+        outputs: &mut CycleOutputs,
+    ) -> Result<CycleStatus, String> {
+        // protocol models, memory and scoreboards operate on values here
+        Ok(CycleStatus::Continue)
+    }
+}
+```
+
+A JSON port schema generates the matching Rust `#[repr(C)]` types and C++
+direct-port adapter. Startup checks the ABI version, sizes, alignments and
+schema hash. The initial scope is intentionally narrow: one synchronous clock,
+top-level two-state ports, and cycle-boundary sampling/driving. Unsupported
+timers, clocks, X/Z behavior and dynamic hierarchy continue to use VPI.
+
+The reproducible cocotb/RustDV comparison, generated-binding example and
+failure-injection test live in
+[`benchmarks/stream-throughput/`](benchmarks/stream-throughput/).
+Its one-million-transaction Verilator 5.050 reference run measured RustDV VPI
+at 22.32x cocotb and RustDV direct at 876.68x cocotb, while the direct path
+retained 84.09% of an equivalent C++ loop's throughput. The benchmark checks
+identical cycle counts, accepted-transaction digests, and per-cycle boundary
+trace digests before accepting those results.
+
 ## The rustdv testbench
 
 The rest of this section walks the TinyALU testbench from the top down. Every

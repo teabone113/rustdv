@@ -25,7 +25,7 @@
 use std::cell::RefCell;
 use std::os::raw::c_void;
 
-use rustdv_gpi_sys::{t_cb_data, vpiHandle};
+use rustdv_gpi_sys::{t_cb_data, vpiHandle, vpiNet, vpiSize, vpiType};
 
 struct StubCallback {
     data: t_cb_data,
@@ -35,6 +35,22 @@ struct StubCallback {
 
 thread_local! {
     static CALLBACKS: RefCell<Vec<*mut StubCallback>> = const { RefCell::new(Vec::new()) };
+    static PROPERTY_GETS: RefCell<Vec<i32>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Clear property-query counters for the calling test thread.
+pub fn reset_property_gets() {
+    PROPERTY_GETS.with(|gets| gets.borrow_mut().clear());
+}
+
+/// Number of times a VPI property was queried on the calling test thread.
+pub fn property_get_count(property: i32) -> usize {
+    PROPERTY_GETS.with(|gets| {
+        gets.borrow()
+            .iter()
+            .filter(|queried| **queried == property)
+            .count()
+    })
 }
 
 /// Remove all callback test-double state for the calling test thread.
@@ -114,7 +130,6 @@ stub! {
     vpi_handle_by_index(a: *mut c_void, b: i32) -> *mut c_void;
     vpi_iterate(a: i32, b: *mut c_void) -> *mut c_void;
     vpi_scan(a: *mut c_void) -> *mut c_void;
-    vpi_get(a: i32, b: *mut c_void) -> i32;
     vpi_get_str(a: i32, b: *mut c_void) -> *mut i8;
     vpi_get_value(a: *mut c_void, b: *mut c_void) -> ();
     vpi_put_value(a: *mut c_void, b: *mut c_void, c: *mut c_void, d: i32) -> *mut c_void;
@@ -122,6 +137,18 @@ stub! {
     vpi_free_object(a: *mut c_void) -> i32;
     vpi_control(a: i32) -> i32;
     vpi_printf(a: *const i8) -> i32;
+}
+
+#[no_mangle]
+pub extern "C" fn vpi_get(property: i32, _handle: *mut c_void) -> i32 {
+    PROPERTY_GETS.with(|gets| gets.borrow_mut().push(property));
+    if property == vpiType {
+        vpiNet
+    } else if property == vpiSize {
+        37
+    } else {
+        panic!("unsupported vpi_get property {property} in test stub")
+    }
 }
 
 #[no_mangle]

@@ -15,6 +15,7 @@
 #endif
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -30,7 +31,101 @@ namespace {
 constexpr std::uint64_t kNoDeadline = std::numeric_limits<std::uint64_t>::max();
 constexpr unsigned kSettleLimit = 100000;
 
-bool settle(Vrustdv_dut& dut) {
+struct SchedulerStats {
+    using Clock = std::chrono::steady_clock;
+
+    explicit SchedulerStats(double interval_seconds)
+        : enabled(interval_seconds > 0.0)
+        , interval(interval_seconds)
+        , started(Clock::now())
+        , last_report(started) {}
+
+    void note_outer_iteration(std::uint64_t sim_time) {
+        if (!enabled) return;
+        ++outer_iterations;
+        // Reading the host clock on every RTL/VPI deadline would distort the
+        // benchmark. Sampling once per 65,536 deadlines is frequent enough
+        // for progress while keeping the disabled path completely inert.
+        if ((outer_iterations & 0xffffU) != 0) return;
+        const auto now = Clock::now();
+        const double since_report = std::chrono::duration<double>(now - last_report).count();
+        if (since_report < interval) return;
+        const double wall = std::chrono::duration<double>(now - started).count();
+        std::fprintf(
+            stderr,
+            "RUSTDV_SCHEDULER_PROGRESS wall_s=%.3f sim_time=%llu deadlines=%llu "
+            "evals=%llu settle_extra=%llu timed=%llu value=%llu rw=%llu ro=%llu\n",
+            wall,
+            static_cast<unsigned long long>(sim_time),
+            static_cast<unsigned long long>(outer_iterations),
+            static_cast<unsigned long long>(eval_calls),
+            static_cast<unsigned long long>(settle_extra_iterations),
+            static_cast<unsigned long long>(timed_dispatches),
+            static_cast<unsigned long long>(value_dispatches),
+            static_cast<unsigned long long>(read_write_dispatches),
+            static_cast<unsigned long long>(read_only_dispatches));
+        last_report = now;
+    }
+
+    void report_final(std::uint64_t sim_time) const {
+        if (!enabled) return;
+        const double wall = std::chrono::duration<double>(Clock::now() - started).count();
+        std::fprintf(
+            stderr,
+            "RUSTDV_SCHEDULER_SUMMARY wall_s=%.3f sim_time=%llu deadlines=%llu "
+            "evals=%llu settle_extra=%llu timed=%llu value=%llu rw=%llu ro=%llu\n",
+            wall,
+            static_cast<unsigned long long>(sim_time),
+            static_cast<unsigned long long>(outer_iterations),
+            static_cast<unsigned long long>(eval_calls),
+            static_cast<unsigned long long>(settle_extra_iterations),
+            static_cast<unsigned long long>(timed_dispatches),
+            static_cast<unsigned long long>(value_dispatches),
+            static_cast<unsigned long long>(read_write_dispatches),
+            static_cast<unsigned long long>(read_only_dispatches));
+    }
+
+    bool enabled = false;
+    double interval = 0.0;
+    Clock::time_point started;
+    Clock::time_point last_report;
+    std::uint64_t outer_iterations = 0;
+    std::uint64_t eval_calls = 0;
+    std::uint64_t settle_extra_iterations = 0;
+    std::uint64_t timed_dispatches = 0;
+    std::uint64_t value_dispatches = 0;
+    std::uint64_t read_write_dispatches = 0;
+    std::uint64_t read_only_dispatches = 0;
+};
+
+double progress_interval_seconds() {
+    const char* value = std::getenv("RUSTDV_VERILATOR_PROGRESS_SECONDS");
+    if (!value || !*value) return 0.0;
+    char* end = nullptr;
+    const double parsed = std::strtod(value, &end);
+    if (!end || *end || parsed <= 0.0) {
+        std::fprintf(
+            stderr,
+            "rustdv: RUSTDV_VERILATOR_PROGRESS_SECONDS must be positive, got %s\n",
+            value);
+        return -1.0;
+    }
+    return parsed;
+}
+
+std::uint32_t runtime_threads() {
+    const char* value = std::getenv("RUSTDV_VERILATOR_THREADS");
+    if (!value || !*value) return 1;
+    char* end = nullptr;
+    const unsigned long parsed = std::strtoul(value, &end, 10);
+    if (!end || *end || parsed == 0 || parsed > 4) {
+        std::fprintf(stderr, "rustdv: invalid RUSTDV_VERILATOR_THREADS=%s\n", value);
+        return 0;
+    }
+    return static_cast<std::uint32_t>(parsed);
+}
+
+bool settle(Vrustdv_dut& dut, SchedulerStats* stats) {
     for (unsigned iteration = 0; iteration < kSettleLimit; ++iteration) {
         // Apply any inertially delayed VPI writes before evaluating the RTL.
         // Clear the dirty flag because this eval consumes all writes made so
@@ -38,17 +133,26 @@ bool settle(Vrustdv_dut& dut) {
         VerilatedVpi::doInertialPuts();
         VerilatedVpi::clearEvalNeeded();
         dut.eval();
+        if (stats) {
+            ++stats->eval_calls;
+            if (iteration != 0) ++stats->settle_extra_iterations;
+        }
 
         // RTL changes wake edge/value awaiters.  Those tasks may queue writes
         // or ReadWrite callbacks, so ReadOnly is not legal until this reaches
         // a fixed point.
         VerilatedVpi::callValueCbs();
         VerilatedVpi::callCbs(cbReadWriteSynch);
+        if (stats) {
+            ++stats->value_dispatches;
+            ++stats->read_write_dispatches;
+        }
 
         if (!VerilatedVpi::evalNeeded()
             && !VerilatedVpi::hasCbs(cbReadWriteSynch)) {
             VerilatedVpi::callCbs(cbAtEndOfSimTime);
             VerilatedVpi::callCbs(cbReadOnlySynch);
+            if (stats) ++stats->read_only_dispatches;
             return true;
         }
     }
@@ -65,7 +169,12 @@ bool settle(Vrustdv_dut& dut) {
 int main(int argc, char** argv, char**) {
     Verilated::debug(0);
     const std::unique_ptr<VerilatedContext> contextp{new VerilatedContext};
-    contextp->threads(1);
+    const std::uint32_t threads = runtime_threads();
+    const double progress_interval = progress_interval_seconds();
+    if (threads == 0 || progress_interval < 0.0) return 2;
+    SchedulerStats stats(progress_interval);
+    SchedulerStats* const statsp = stats.enabled ? &stats : nullptr;
+    contextp->threads(threads);
     contextp->commandArgs(argc, argv);
 
     const std::unique_ptr<Vrustdv_dut> dutp{new Vrustdv_dut{contextp.get(), ""}};
@@ -95,12 +204,14 @@ int main(int argc, char** argv, char**) {
 
     bool scheduler_ok = true;
     while (!contextp->gotFinish()) {
+        if (statsp) stats.note_outer_iteration(contextp->time());
         // Timed callbacks run before model evaluation at their deadline.
         VerilatedVpi::callTimedCbs();
         VerilatedVpi::callCbs(cbNextSimTime);
         VerilatedVpi::callCbs(cbAtStartOfSimTime);
+        if (statsp) ++stats.timed_dispatches;
 
-        if (!settle(*dutp)) {
+        if (!settle(*dutp, statsp)) {
             scheduler_ok = false;
             break;
         }
@@ -130,6 +241,7 @@ int main(int argc, char** argv, char**) {
 
     dutp->final();
     VerilatedVpi::callCbs(cbEndOfSimulation);
+    stats.report_final(contextp->time());
 
 #if VM_TRACE_FST
     if (tracep) tracep->close();

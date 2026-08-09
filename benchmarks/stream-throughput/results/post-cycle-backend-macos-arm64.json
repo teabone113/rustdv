@@ -1,0 +1,144 @@
+{
+  "configuration": {
+    "inject_error": false,
+    "minimum_direct_speedup": 10.0,
+    "native": true,
+    "repeats": 3,
+    "rustdv_opt": "o3",
+    "seed": 1,
+    "threads": 1,
+    "transactions": 100000
+  },
+  "git_revision": "3038cdd27a19d48b0de467ac7471e431e5016e07",
+  "machine": "arm64",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.11.7",
+  "results": {
+    "cocotb": {
+      "backend": "cocotb",
+      "cycles": 121103,
+      "digest": "070d8652638223bf",
+      "median_cycles_per_s": 25279.209,
+      "median_elapsed_s": 4.790616583,
+      "samples": [
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 25279.209,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 4.790616583,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 25279.401,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 4.79058025,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "cocotb",
+          "cycles": 121103,
+          "cycles_per_s": 24827.399,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 4.877796542,
+          "status": "pass",
+          "transactions": 100000
+        }
+      ],
+      "status": "pass",
+      "transactions": 100000
+    },
+    "rustdv-direct": {
+      "backend": "rustdv-direct",
+      "cycles": 121103,
+      "digest": "070d8652638223bf",
+      "median_cycles_per_s": 15953060.435,
+      "median_elapsed_s": 0.007591208,
+      "samples": [
+        {
+          "backend": "rustdv-direct",
+          "cycles": 121103,
+          "cycles_per_s": 13611602.598,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.008897042,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-direct",
+          "cycles": 121103,
+          "cycles_per_s": 15953060.435,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.007591208,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-direct",
+          "cycles": 121103,
+          "cycles_per_s": 16577529.859,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.00730525,
+          "status": "pass",
+          "transactions": 100000
+        }
+      ],
+      "status": "pass",
+      "transactions": 100000
+    },
+    "rustdv-vpi": {
+      "backend": "rustdv-vpi",
+      "cycles": 121103,
+      "digest": "070d8652638223bf",
+      "median_cycles_per_s": 379794.502,
+      "median_elapsed_s": 0.318864542,
+      "samples": [
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 372335.531,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.325252333,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 379794.502,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.318864542,
+          "status": "pass",
+          "transactions": 100000
+        },
+        {
+          "backend": "rustdv-vpi",
+          "cycles": 121103,
+          "cycles_per_s": 379935.102,
+          "digest": "070d8652638223bf",
+          "elapsed_s": 0.318746542,
+          "status": "pass",
+          "transactions": 100000
+        }
+      ],
+      "status": "pass",
+      "transactions": 100000
+    },
+    "speedups": {
+      "rustdv-direct_vs_cocotb": 631.074351851753,
+      "rustdv-vpi_vs_cocotb": 15.02398678692834
+    },
+    "target": {
+      "actual_direct_speedup": 631.074351851753,
+      "met": true,
+      "minimum_direct_speedup": 10.0
+    }
+  },
+  "schema": "rustdv.stream-throughput-benchmark/v1",
+  "timestamp_utc": "2026-08-08T23:50:29.005503+00:00",
+  "verilator": "Verilator 5.050 2026-07-01 rev vUNKNOWN-built20260701"
+}

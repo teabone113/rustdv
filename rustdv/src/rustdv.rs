@@ -21,6 +21,9 @@
 //! ```
 
 // --- sub-crates, re-exported whole for power users -------------------------
+mod cycle_vpi;
+
+pub use rustdv_cycle as cycle;
 pub use rustdv_gpi as gpi;
 pub use rustdv_runner as runner;
 pub use rustdv_sim as sim;
@@ -39,6 +42,8 @@ pub use rustdv_macros::Component;
 pub use rustdv_sim::{first, join};
 
 // --- the curated surface ----------------------------------------------------
+pub use rustdv_cycle::{CycleAbiHeader, CycleAbiInfo, CycleModel, CycleStatus, CYCLE_ABI_VERSION};
+pub use cycle_vpi::run_cycle_model_vpi;
 pub use rustdv_runner::TestRegistration;
 
 pub use rustdv_sim::{
@@ -77,7 +82,8 @@ pub mod prelude {
         build_all, channel, check_all, connect_all, end_of_elaboration_all, extract_all, final_all,
         first2, join2, next_time_step, print_hierarchy, read_only, read_write, report_all,
         run_component_test, run_extract_check_report, sim_time_ns, spawn, spawn_named, start_all,
-        start_of_simulation_all, with_timeout, Active, AnalysisBus, CheckSink, Clock,
+        start_of_simulation_all, with_timeout, Active, AnalysisBus, CheckSink, Clock, CycleModel,
+        CycleStatus,
         RustdvComp, Component, ComponentNode, Either, Event, Factory, HandleError, HierarchyHandle,
         Lock, Logic, LogicArray, LogicHandle, NullTrigger, ObjectionGuard, Queue, Receiver, Rng,
         create_seq, set_seq_override,

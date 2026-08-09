@@ -1,0 +1,16 @@
+[package]
+name = "rustdv-stream-bench-vpi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+rustdv = { path = "../.." }
+rustdv-stream-bench-model = { path = "../stream-model" }
+
+[dev-dependencies]
+rustdv-vpi-stubs = { path = "../../rustdv-vpi-stubs" }

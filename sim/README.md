@@ -16,6 +16,10 @@ rot unnoticed.
 - `run_rustdv.sh` — builds and runs the Rust TinyALU testbench.
 - `run_verilator.sh` / `verilator_main.cpp` — shared Verilator build wrapper
   and correctness-critical event loop.
+- `generate_cycle_bindings.py` — emits matching Rust and C++ direct-cycle ABI
+  bindings from one JSON schema.
+- `run_verilator_cycle.sh` / `verilator_cycle_main.cpp` — cycle-oriented FAST
+  host with direct top-port access and structured pass/fail status.
 - `verilator-debug.vlt` — TinyALU's deliberately selected DEBUG internals.
 
 ## Running
@@ -44,6 +48,11 @@ The last command writes an FST under `/tmp/rustdv-$(id -u)/`. FAST exposes
 only top-level ports; DEBUG adds the signals in a Verilator control file; the
 small framework probe alone uses full visibility. See [`TOOLS.md`](../TOOLS.md)
 for the scheduling contract and the two-state/four-state boundary.
+
+The direct cycle host is separate from the VPI scheduler. It is intended for
+one-clock synchronous workloads whose generated adapter can exchange all
+required top-level values once per cycle. See the stream-throughput benchmark
+for a complete schema, generated bindings, Rust model and invocation.
 
 Commercial-simulator invocations are the standard ones but **untested here**
 — public CI cannot hold EDA licenses. If you have a license and the command
