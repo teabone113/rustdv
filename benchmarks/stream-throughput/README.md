@@ -30,19 +30,20 @@ transactions, fewer than three measured repetitions, no warmup, or an
 incomplete backend set.
 
 On the Apple M1 Pro reference machine with Verilator 5.050, cocotb 2.0.1,
-Rust 1.97.0 and Apple Clang 17, the one-million transaction run completed the
-same 1,209,415 active cycles, accepted-transaction digest
+Rust 1.97.0 and Apple Clang 17, the one-million transaction run at framework
+revision `2b8f371` completed the same 1,209,415 active cycles,
+accepted-transaction digest
 `f2a1c4267802b565`, and per-cycle trace digest `57e0f80eafd04513`
 in every backend. Three-sample medians were:
 
 | Backend | Cycles/s | Versus cocotb |
 |---|---:|---:|
-| cocotb | 16,773 | 1.00x |
-| RustDV VPI | 374,379 | 22.32x |
-| RustDV direct | 14,704,611 | 876.68x |
-| direct C++ | 17,487,709 | 1,042.61x |
+| cocotb | 16,039 | 1.00x |
+| RustDV VPI | 418,771 | 26.11x |
+| RustDV direct | 14,694,598 | 916.19x |
+| direct C++ | 17,149,603 | 1,069.26x |
 
-RustDV direct reached 84.09% of the equivalent C++ ceiling. One model thread
+RustDV direct reached 85.68% of the equivalent C++ ceiling. One model thread
 was fastest for this cheap DUT: RustDV direct measured 14.70M, 11.29M, and
 11.55M cycles/s with one, two, and four threads respectively. Portable `-O3`
 measured 15.44M cycles/s versus 13.13M with the default `-Os`; `-march=native`
