@@ -38,12 +38,15 @@ Run the Rust testbench with either backend:
 sim/run_rustdv.sh release icarus
 sim/run_rustdv.sh release verilator
 RUSTDV_VERILATOR_MODE=debug sim/run_rustdv.sh release verilator
+RUSTDV_VERILATOR_MODE=inspect sim/run_rustdv.sh release verilator
 ```
 
-The last command writes an FST under `/tmp/rustdv-$(id -u)/`. FAST exposes
-only top-level ports; DEBUG adds the signals in a Verilator control file; the
-small framework probe alone uses full visibility. See [`TOOLS.md`](../TOOLS.md)
-for the scheduling contract and the two-state/four-state boundary.
+DEBUG writes an FST under `/tmp/rustdv-$(id -u)/`. FAST exposes only top-level
+ports; DEBUG adds the signals in a Verilator control file and an FST; INSPECT
+adds the same selected VPI visibility without building or emitting a waveform.
+The small framework probe alone uses full visibility. See [`TOOLS.md`](../TOOLS.md)
+for the scheduling contract, simulator controls, and two-state/four-state
+boundary.
 
 Commercial-simulator invocations are the standard ones but **untested here**
 — public CI cannot hold EDA licenses. If you have a license and the command
