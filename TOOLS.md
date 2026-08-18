@@ -40,6 +40,7 @@ sim/run_rustdv.sh release verilator
 
 # Selected internals plus /tmp/.../tinyalu.fst.
 RUSTDV_VERILATOR_MODE=debug sim/run_rustdv.sh release verilator
+RUSTDV_VERILATOR_MODE=inspect RUSTDV_VERILATOR_CONTROL_FILE=sim/verilator-debug.vlt sim/run_rustdv.sh release verilator
 ```
 
 Verilator cannot model general X/Z propagation. Randomizing initial values is
