@@ -14,12 +14,17 @@ dependencies = [
 name = "rustdv"
 version = "0.1.1"
 dependencies = [
+ "rustdv-cycle",
  "rustdv-gpi",
  "rustdv-macros",
  "rustdv-methodology",
  "rustdv-runner",
  "rustdv-sim",
 ]
+
+[[package]]
+name = "rustdv-cycle"
+version = "0.1.0"
 
 [[package]]
 name = "rustdv-gpi"
@@ -63,8 +68,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustdv-stream-bench-cycle"
+version = "0.1.0"
+dependencies = [
+ "rustdv-cycle",
+ "rustdv-stream-bench-model",
+]
+
+[[package]]
+name = "rustdv-stream-bench-model"
+version = "0.1.0"
+
+[[package]]
+name = "rustdv-stream-bench-vpi"
+version = "0.1.0"
+dependencies = [
+ "rustdv",
+ "rustdv-stream-bench-model",
+ "rustdv-vpi-stubs",
+]
+
+[[package]]
 name = "rustdv-vpi-stubs"
 version = "0.1.0"
+dependencies = [
+ "rustdv-gpi-sys",
+]
 
 [[package]]
 name = "tinyalu_tb"

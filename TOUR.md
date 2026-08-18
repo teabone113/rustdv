@@ -6,8 +6,8 @@ Last verified 2026-08-08; the proven claims below are checked by the
 regression suite, not aspirational.*
 
 > **Both products are complete.** The framework is done — every chapter crate
-> green on the Icarus reference, with the TinyALU, scheduler, and mutation
-> paths also green on Verilator. **The book is done
+> green on the Icarus reference, with the TinyALU, scheduler, callback-lifecycle,
+> and mutation paths also green on Verilator. **The book is done
 > too:** every transcript is real simulator output, every ch15–40 listing is
 > checked against its crate, and the end-to-end read has run. The UVM
 > restoration that dominated this repo's history is finished; `#[component]`
@@ -55,6 +55,10 @@ pre-push hook:
 - **Mutation-checked**: with the DUT's XOR deliberately corrupted to OR,
   the scoreboard flags every affected transaction and the regression
   fails; restored, it passes. The checking has teeth.
+- **Callback ownership is stress-checked**: one million fired ReadOnly and
+  NextTimeStep registrations reach a stable RSS plateau under Verilator. With
+  one-shot removal deliberately disabled, the same check grows linearly and
+  fails.
 - `output/regression/regress.py` — the current tree is green on macOS/arm64,
   including every Verilator entry. The Icarus-only entries were not rerun on
   that machine because Icarus was absent; the Linux CI matrix is their next
@@ -234,7 +238,8 @@ cd output/examples && sim-common/run_sim.sh <crate_name> <top_module>
 crate ch15–ch39 runs on Icarus; `tinyalu_tb` also runs on Verilator through the
 shared scheduler host and is mutation-checked on both. The Verilator-compatible
 framework probe covers VPI-only timers and ReadWrite-to-ReadOnly RTL settling;
-the two X/Z cases remain Icarus-only. The only quarantined
+its callback-lifecycle lane also proves one million fired one-shots reach a
+stable RSS plateau. The two X/Z cases remain Icarus-only. The only quarantined
 package is `ch21_macros`, a macro demonstration with no simulator test, marked
 `no_sim_test` in `regress.json`; it never comes off the list. `.design-decisions.md`
 §16 is empty. **D116/D117 landed on 2026-08-05**: the analysis trait is
@@ -249,8 +254,9 @@ code job is queued. **The final
 publication sweep of the manuscript ran on 2026-08-05** — TOC titles, appendix
 cross-references and chapter pointers verified against the crates, spelling and
 figure-reference conventions unified — and `book-pdf/FABLE.md`'s top notes are
-satisfied (marked done in place). D119's Verilator integration is verified on
-macOS/arm64; Linux CI and an Icarus transcript rerun remain pending.
+satisfied (marked done in place). D119/D120's Verilator integration and callback
+ownership are verified on macOS/arm64; Linux CI and an Icarus transcript rerun
+remain pending.
 
 **The test suite**, in three tiers under the chapter runs
 (`output/regression/TESTING.md` is the operating manual, including the two
@@ -259,7 +265,7 @@ runner behaviours a simulator test must know about):
 | Tier | Where | What it is |
 |---|---|---|
 | no-simulator | `#[cfg(test)]` modules in `rustdv/` | `regress.py --suite unit`, ~2 s |
-| targeted simulator | `rustdv/framework-tests/` | six named groups, plus `sim-mutation` |
+| targeted simulator | `rustdv/framework-tests/` | seven named groups, plus `sim-mutation` |
 | compile-fail | `rustdv/framework-tests/compile-fail/` | each case asserts its `error[E….]` |
 
 `python3 output/regression/regress.py --list` prints the current entry count and

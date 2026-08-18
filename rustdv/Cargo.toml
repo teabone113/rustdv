@@ -7,9 +7,13 @@ members = [
     "rustdv-methodology",
     "rustdv-macros",
     "rustdv-vpi-stubs",
+    "rustdv-cycle",
     "rustdv-runner",
     "tinyalu_tb",
     "framework-tests",
+    "benchmarks/stream-model",
+    "benchmarks/stream-vpi",
+    "benchmarks/stream-cycle",
 ]
 # Crates that must NOT compile. Each is built on its own by
 # framework-tests/compile-fail/run.sh, which requires the failure and checks
@@ -47,6 +51,7 @@ categories = ["development-tools::testing", "simulation"]
 path = "src/rustdv.rs"
 
 [dependencies]
+rustdv-cycle = { path = "rustdv-cycle", version = "0.1.0" }
 rustdv-gpi = { path = "rustdv-gpi", version = "0.1.0" }
 rustdv-sim = { path = "rustdv-sim", version = "0.1.0" }
 rustdv-methodology = { path = "rustdv-methodology", version = "0.1.0" }

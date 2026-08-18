@@ -1,0 +1,74 @@
+{
+  "cocotb": "2.0.1",
+  "configuration": {
+    "acceptance": false,
+    "cocotb_opt": "o3",
+    "inject_error": false,
+    "measurement": "median simulator/testbench elapsed time; build excluded",
+    "minimum_cpp_fraction": 0.75,
+    "minimum_direct_speedup": 10.0,
+    "native": true,
+    "repeats": 3,
+    "rustdv_opt": "o3",
+    "seed": 1,
+    "threads": 2,
+    "transactions": 1000000,
+    "visibility": "top-level ports only"
+  },
+  "cpu_model": "Apple M1 Pro",
+  "cxx": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+  "git_revision": "3038cdd27a19d48b0de467ac7471e431e5016e07",
+  "machine": "arm64",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.11.7",
+  "results": {
+    "rustdv-direct": {
+      "backend": "rustdv-direct",
+      "cycles": 1209415,
+      "digest": "f2a1c4267802b565",
+      "median_cycles_per_s": 11291951.053,
+      "median_elapsed_s": 0.107104166,
+      "samples": [
+        {
+          "backend": "rustdv-direct",
+          "cycles": 1209415,
+          "cycles_per_s": 11291951.053,
+          "digest": "f2a1c4267802b565",
+          "elapsed_s": 0.107104166,
+          "status": "pass",
+          "trace_digest": "57e0f80eafd04513",
+          "transactions": 1000000
+        },
+        {
+          "backend": "rustdv-direct",
+          "cycles": 1209415,
+          "cycles_per_s": 11616745.33,
+          "digest": "f2a1c4267802b565",
+          "elapsed_s": 0.104109625,
+          "status": "pass",
+          "trace_digest": "57e0f80eafd04513",
+          "transactions": 1000000
+        },
+        {
+          "backend": "rustdv-direct",
+          "cycles": 1209415,
+          "cycles_per_s": 11259449.409,
+          "digest": "f2a1c4267802b565",
+          "elapsed_s": 0.107413334,
+          "status": "pass",
+          "trace_digest": "57e0f80eafd04513",
+          "transactions": 1000000
+        }
+      ],
+      "status": "pass",
+      "trace_digest": "57e0f80eafd04513",
+      "transactions": 1000000
+    }
+  },
+  "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "schema": "rustdv.stream-throughput-benchmark/v1",
+  "source_diff_sha256": "f7c7221553db1272d94209f5f1a0aa06e97957d9f55031f6179fbdc6ea3e1fa7",
+  "timestamp_utc": "2026-08-09T00:41:35.963655+00:00",
+  "verilator": "Verilator 5.050 2026-07-01 rev vUNKNOWN-built20260701",
+  "working_tree_dirty": true
+}

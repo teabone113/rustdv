@@ -1,0 +1,25 @@
+{
+  "schema": "rustdv.cycle-schema/v1",
+  "name": "stream_throughput",
+  "top": "stream_bench",
+  "clock": "clk",
+  "inputs": [
+    { "name": "s_ready", "port": "s_ready", "type": "u8", "width": 1 },
+    { "name": "m_valid", "port": "m_valid", "type": "u8", "width": 1 },
+    { "name": "m_data", "port": "m_data", "type": "u64", "width": 64 },
+    { "name": "m_id", "port": "m_id", "type": "u16", "width": 16 },
+    { "name": "m_last", "port": "m_last", "type": "u8", "width": 1 },
+    { "name": "m_user", "port": "m_user", "type": "u8", "width": 8 },
+    { "name": "accepted_count", "port": "accepted_count", "type": "u64", "width": 64 }
+  ],
+  "outputs": [
+    { "name": "reset_n", "port": "reset_n", "type": "u8", "width": 1 },
+    { "name": "s_valid", "port": "s_valid", "type": "u8", "width": 1 },
+    { "name": "s_data", "port": "s_data", "type": "u64", "width": 64 },
+    { "name": "s_id", "port": "s_id", "type": "u16", "width": 16 },
+    { "name": "s_last", "port": "s_last", "type": "u8", "width": 1 },
+    { "name": "s_user", "port": "s_user", "type": "u8", "width": 8 },
+    { "name": "m_ready", "port": "m_ready", "type": "u8", "width": 1 },
+    { "name": "inject_error", "port": "inject_error", "type": "u8", "width": 1 }
+  ]
+}

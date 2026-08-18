@@ -6,6 +6,7 @@
 # RUSTDV_VERILATOR_MODE:
 #   fast       top-level DUT ports only (default)
 #   debug      selected internals from RUSTDV_VERILATOR_CONTROL_FILE + FST
+#   inspect    selected internals from RUSTDV_VERILATOR_CONTROL_FILE, no FST
 #   framework  all signals visible; regression probes only
 set -euo pipefail
 
@@ -21,6 +22,21 @@ BUILD="$3"
 shift 3
 HDL=("$@")
 MODE="${RUSTDV_VERILATOR_MODE:-fast}"
+THREADS="${RUSTDV_VERILATOR_THREADS:-1}"
+
+case "$THREADS" in
+    1|2|4) ;;
+    *) echo "rustdv: RUSTDV_VERILATOR_THREADS must be 1, 2, or 4" >&2; exit 2 ;;
+esac
+
+case "${RUSTDV_VERILATOR_OPT:-default}" in
+    default) OPT_FAST="-Os" ;;
+    o3) OPT_FAST="-O3" ;;
+    *) echo "rustdv: RUSTDV_VERILATOR_OPT must be default or o3" >&2; exit 2 ;;
+esac
+if [ "${RUSTDV_VERILATOR_NATIVE:-0}" = 1 ]; then
+    OPT_FAST="$OPT_FAST -march=native"
+fi
 
 if [[ ! "$TOP" =~ ^[A-Za-z_][A-Za-z0-9_\$]*$ ]]; then
     echo "rustdv: unsupported Verilator top-module name: $TOP" >&2
@@ -50,8 +66,10 @@ EXE="$OBJ/rustdv_sim"
 LOG="$BUILD/verilator.log"
 
 FLAGS=(
-    --cc --exe --build -j "${RUSTDV_VERILATOR_JOBS:-0}"
+    --cc --exe
     -sv --timing --vpi
+    --threads "$THREADS"
+    -CFLAGS "$OPT_FAST"
     --prefix Vrustdv_dut
     --top-module "$TOP"
     --Mdir "$OBJ"
@@ -80,11 +98,23 @@ case "$MODE" in
         fi
         export RUSTDV_FST="${RUSTDV_FST:-$BUILD/${TOP}.fst}"
         ;;
+    inspect)
+        CONTROL="${RUSTDV_VERILATOR_CONTROL_FILE:-}"
+        if [ -z "$CONTROL" ] || [ ! -f "$CONTROL" ]; then
+            echo "rustdv: inspect mode requires RUSTDV_VERILATOR_CONTROL_FILE=<file.vlt>" >&2
+            exit 2
+        fi
+        if [ -n "${RUSTDV_FST:-}" ]; then
+            echo "rustdv: FST tracing belongs to debug mode (set RUSTDV_VERILATOR_MODE=debug)" >&2
+            exit 2
+        fi
+        INPUTS+=("$CONTROL")
+        ;;
     framework)
         FLAGS+=(--public-flat-rw)
         ;;
     *)
-        echo "rustdv: unknown RUSTDV_VERILATOR_MODE '$MODE' (use fast|debug|framework)" >&2
+        echo "rustdv: unknown RUSTDV_VERILATOR_MODE '$MODE' (use fast|debug|inspect|framework)" >&2
         exit 2
         ;;
 esac
@@ -104,6 +134,8 @@ else
 fi
 INPUTS+=("${HDL[@]}")
 verilator "${FLAGS[@]}" "${INPUTS[@]}" "$SCRIPT_DIR/verilator_main.cpp"
+make -C "$OBJ" -f Vrustdv_dut.mk -j "${RUSTDV_VERILATOR_JOBS:-1}" \
+    OPT_FAST="$OPT_FAST" OPT_GLOBAL="$OPT_FAST" OPT_SLOW="-O0"
 
 set +e
 "$EXE" "+verilator+vpi+$LIB" 2>&1 | tee "$LOG"

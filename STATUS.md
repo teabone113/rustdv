@@ -1321,3 +1321,33 @@ Local verification on macOS/arm64 used Homebrew Verilator 5.050. The full
 regression is green; its Icarus-only entries and transcript rerun skipped
 because Icarus is not installed on this Mac. Linux and the new CI matrix remain
 unverified until GitHub runs the workflow.
+
+## 2026-08-08 — D120: fired one-shot VPI handles are reclaimed
+
+GitHub issue #1 identified linear memory growth in phase-heavy Verilator runs:
+Verilator removed each fired one-shot from its schedule but retained the handle
+returned by `vpi_register_cb()`. RustDV's one `released` flag tracked the
+C-side Rust `Rc`, so the trampoline set it and the later
+`CallbackHandle::drop()` skipped the only `vpi_remove_cb()` call.
+
+One-shots now store their registration handle in shared callback state and
+remove it from inside the trampoline, before user code runs. That point is safe
+on both supported simulators: Verilator releases its separate handle object,
+while Icarus marks the active callback for normal reaping after return.
+Unfired and recurring callbacks retain remove-on-Drop. `forget()` now detaches
+the Rust owner instead of leaking it with `mem::forget`, so the startup
+one-shot's shared state is reclaimed after firing.
+
+The VPI test stub now models Verilator's retained fired handle and exposes only
+an unsafe raw-pointer ABI; its safe reset helper refuses to free live handles.
+Focused tests cover fired cleanup, detached cleanup, and reset safety. The real
+Verilator regression runs one million ReadOnly/NextTimeStep iterations and
+checks RSS after warm-up. The fixed run grew by 48 KiB. With the trampoline
+removal deliberately disabled, it grew by 850,432 KiB and failed, proving the
+check detects the original leak.
+
+Local macOS/arm64 verification used Verilator 5.050: the lifecycle stress and
+34-test scheduler lanes pass, the affected crates pass Clippy apart from two
+pre-existing rustdv-gpi lint allowances, and the available full regression is
+green. Icarus is not installed locally, so its trigger/phase rerun remains a CI
+gate.

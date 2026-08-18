@@ -1,0 +1,13 @@
+[package]
+name = "rustdv-stream-bench-cycle"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+rustdv-cycle = { path = "../../rustdv-cycle" }
+rustdv-stream-bench-model = { path = "../stream-model" }

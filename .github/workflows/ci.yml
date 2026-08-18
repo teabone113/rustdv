@@ -78,8 +78,9 @@ jobs:
           if-no-files-found: ignore
 
   # Free-simulator validation. Linux runs every simulator entry; macOS runs
-  # the Verilator entries that exercise runtime loading, scheduling and the
-  # mutation check. Commercial simulators cannot run in public CI.
+  # the Verilator entries that exercise runtime loading, scheduling, callback
+  # ownership and the mutation check. Commercial simulators cannot run in
+  # public CI.
   sim-smoke:
     strategy:
       fail-fast: false
