@@ -42,4 +42,6 @@ module probe;
    wire keep_alive = ^{byte_sig, word_sig, nibble, flag, comb_in, comb_out,
                        never_driven, never_driven_bus};
 
+   final $display("RTL FINAL: PASS");
+
 endmodule

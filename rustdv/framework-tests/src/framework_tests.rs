@@ -33,6 +33,7 @@
 //! | `conc_` | [`concurrency`] | the D82 family, against real time |
 //! | `elab_` | [`elaboration`] | unconnected ports fail before the run phase |
 //! | `runner_` | [`runner`] | timeouts, `expect_error`, per-test freshness |
+//! | `stable_point_` | [`triggers`] | synchronous service at settled ReadOnly |
 //!
 //! The DUT is `hdl/probe.sv`: a clock, signals of known widths that nothing
 //! drives, and one counter so an edge trigger has something to trigger on.
