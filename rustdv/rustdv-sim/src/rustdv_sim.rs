@@ -35,7 +35,7 @@ pub use handle::{
     AggregateHandle, HierarchyHandle, LogicHandle, RealHandle, SimHandle, StringHandle,
 };
 pub use path::RustdvPath;
-pub use phase::{next_time_step, read_only, read_write};
+pub use phase::{next_time_step, read_only, read_write, service_read_only};
 pub use queue::Queue;
 pub use rng::Rng;
 pub use sync::{Event, Lock, LockGuard};
