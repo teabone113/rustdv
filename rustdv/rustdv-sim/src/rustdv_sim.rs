@@ -27,6 +27,7 @@ pub mod sync;
 pub mod testing;
 pub mod time;
 pub mod triggers;
+pub mod verilator_trace;
 
 pub use clock::Clock;
 pub use combinators::{Either, TimeoutError, first2, join_all, join2, with_timeout};
