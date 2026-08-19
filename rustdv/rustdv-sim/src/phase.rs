@@ -112,6 +112,10 @@ pub fn current_phase() -> SimPhase {
     hub().phase.get()
 }
 
+pub(crate) fn current_phase_if_initialized() -> Option<SimPhase> {
+    HUB.with(|hub| hub.borrow().as_ref().map(|hub| hub.phase.get()))
+}
+
 // ---------------------------------------------------------------------------
 // Leaving ReadOnly (D108)
 // ---------------------------------------------------------------------------
