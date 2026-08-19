@@ -790,7 +790,7 @@ asserted here.
 | | Status |
 |---|---|
 | Icarus Verilog | full simulation; runs in CI, and every transcript in the book comes from it |
-| Verilator | FAST two-state simulation, scheduler regression, mutation check, and FST DEBUG mode; runs in Linux/macOS CI |
+| Verilator | FAST two-state simulation, scheduler regression, mutation check, FST DEBUG mode, and runtime-gated RECORD mode; runs in Linux/macOS CI |
 | VCS / Questa / Xcelium | same script (`sim/run_smoke.sh vcs\|questa\|xcelium`); licenses can't live in public CI, so license-holders run the identical regression locally |
 | EDA Playground | HDL side only — it has no Rust toolchain; see [sim/README.md](sim/README.md) |
 

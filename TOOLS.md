@@ -23,13 +23,18 @@ use Linux, macOS, or WSL rather than native Windows.
 |---|---|---|---|
 | `fast` | Ports of the selected top module only | off | Normal functional regression |
 | `debug` | Top ports plus internals selected by a `.vlt` control file | FST | Focused diagnosis |
+| `record` | Top ports plus optional `.vlt` selections | runtime-gated all-signal FST | MCP/history capture only while armed |
+| `inspect` | Top ports plus internals selected by a `.vlt` control file | off | Live VPI diagnosis without waveform instrumentation |
 | `framework` | `--public-flat-rw` | off | Small rustdv scheduler/handle probes only |
 
 FAST does not use global `--public-flat-rw`. The build generates a control
 file under `/tmp` that marks only the selected top module's ports for VPI.
-DEBUG requires `RUSTDV_VERILATOR_CONTROL_FILE`; the TinyALU entry point
-defaults it to `sim/verilator-debug.vlt`. Framework mode is deliberately
-expensive and must not be copied into a large DUT flow.
+DEBUG and INSPECT require `RUSTDV_VERILATOR_CONTROL_FILE`; the TinyALU entry
+point defaults it to `sim/verilator-debug.vlt`. RECORD accepts the same selected
+VPI control file but FST itself retains all traceable signals. It creates no
+file and records no samples until runtime control calls `start`, and it closes
+the capture synchronously on `stop`. Framework mode is deliberately expensive
+and must not be copied into a large DUT flow.
 
 ```sh
 # Four-state reference, and the source of exact book transcripts.
@@ -40,6 +45,9 @@ sim/run_rustdv.sh release verilator
 
 # Selected internals plus /tmp/.../tinyalu.fst.
 RUSTDV_VERILATOR_MODE=debug sim/run_rustdv.sh release verilator
+
+# Runtime-gated capture for a debug service; no FST is opened by this command alone.
+RUSTDV_VERILATOR_MODE=record sim/run_rustdv.sh release verilator
 ```
 
 Verilator cannot model general X/Z propagation. Randomizing initial values is
