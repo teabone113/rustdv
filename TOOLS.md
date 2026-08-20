@@ -7,7 +7,7 @@ results may be compared.
 | Tool | Role | Required behavior |
 |---|---|---|
 | Icarus Verilog | Four-state framework reference and book transcript source | SystemVerilog 2012, VPI modules, X/Z propagation |
-| Verilator 5.050 | FAST two-state functional simulation | timing support, VPI, POSIX runtime VPI loading |
+| Verilator 5.050 | FAST two-state functional simulation and RTL coverage | timing support, VPI, POSIX runtime VPI loading, `verilator_coverage` |
 | Rust toolchain | Builds testbench cdylibs and unit tests | Pinned by `rust-toolchain.toml` |
 | FST + GTKWave | DEBUG waveform path | Built with Verilator `--trace-fst`; `liblz4` development files are required |
 
@@ -25,6 +25,7 @@ use Linux, macOS, or WSL rather than native Windows.
 | `debug` | Top ports plus internals selected by a `.vlt` control file | FST | Focused diagnosis |
 | `record` | Top ports plus optional `.vlt` selections | runtime-gated all-signal FST | MCP/history capture only while armed |
 | `inspect` | Top ports plus internals selected by a `.vlt` control file | off | Live VPI diagnosis without waveform instrumentation |
+| `coverage` | Top ports plus optional `.vlt` selections | off | Separate line/expression-instrumented coverage run |
 | `framework` | `--public-flat-rw` | off | Small rustdv scheduler/handle probes only |
 
 FAST does not use global `--public-flat-rw`. The build generates a control
@@ -35,6 +36,14 @@ VPI control file but FST itself retains all traceable signals. It creates no
 file and records no samples until runtime control calls `start`, and it closes
 the capture synchronously on `stop`. Framework mode is deliberately expensive
 and must not be copied into a large DUT flow.
+
+COVERAGE is also a separate build profile. It enables Verilator line and
+expression coverage, requires `RUSTDV_COVERAGE_FILE`, and optionally accepts a
+bench-owned `RUSTDV_VERILATOR_CONTROL_FILE` for coverage selection. The shared
+host writes the database only after `final()` and end-of-simulation callbacks,
+including orderly RustDV failure paths. The runner then preserves the ordinary
+regression verdict: a `REGRESSION: FAIL` run still exits nonzero. FST and
+coverage are intentionally not combined. FAST has neither instrumentation.
 
 ```sh
 # Four-state reference, and the source of exact book transcripts.
@@ -48,6 +57,13 @@ RUSTDV_VERILATOR_MODE=debug sim/run_rustdv.sh release verilator
 
 # Runtime-gated capture for a debug service; no FST is opened by this command alone.
 RUSTDV_VERILATOR_MODE=record sim/run_rustdv.sh release verilator
+
+# Separate line/expression coverage profile.
+RUSTDV_VERILATOR_MODE=coverage \
+RUSTDV_COVERAGE_FILE=/tmp/rustdv-coverage/tinyalu.dat \
+  sim/run_rustdv.sh release verilator
+
+verilator_coverage --report summary /tmp/rustdv-coverage/tinyalu.dat
 ```
 
 Verilator cannot model general X/Z propagation. Randomizing initial values is

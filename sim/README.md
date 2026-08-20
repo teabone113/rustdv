@@ -40,6 +40,9 @@ sim/run_rustdv.sh release verilator
 RUSTDV_VERILATOR_MODE=debug sim/run_rustdv.sh release verilator
 RUSTDV_VERILATOR_MODE=record sim/run_rustdv.sh release verilator
 RUSTDV_VERILATOR_MODE=inspect sim/run_rustdv.sh release verilator
+RUSTDV_VERILATOR_MODE=coverage \
+RUSTDV_COVERAGE_FILE=/tmp/rustdv-coverage/tinyalu.dat \
+  sim/run_rustdv.sh release verilator
 ```
 
 DEBUG writes an FST under `/tmp/rustdv-$(id -u)/`. FAST exposes only top-level
@@ -51,6 +54,23 @@ instrumentation. Calling runtime trace control in FAST or INSPECT returns a
 structured unsupported-capability error. The small framework probe alone uses
 full VPI visibility. See [`TOOLS.md`](../TOOLS.md) for the scheduling contract,
 simulator controls, and two-state/four-state boundary.
+
+COVERAGE is a separate line/expression-instrumented build. It writes the
+Verilator coverage database after the RTL `final` block and end-of-simulation
+callbacks on every orderly termination path. A failed RustDV regression still
+returns failure, but its database is retained for diagnosis. A bench may set
+`RUSTDV_VERILATOR_CONTROL_FILE` to a Verilator control file containing
+`coverage_on`/`coverage_off` rules. FST tracing is deliberately rejected in
+this profile; use separate build directories for FAST, waves, and coverage.
+Inspect a database with, for example:
+
+```sh
+verilator_coverage --report summary /tmp/rustdv-coverage/tinyalu.dat
+verilator_coverage --annotate coverage-html /tmp/rustdv-coverage/tinyalu.dat
+```
+
+FAST remains entirely uninstrumented and rejects `RUSTDV_COVERAGE_FILE` so a
+misconfigured task cannot silently claim to have collected coverage.
 
 Commercial-simulator invocations are the standard ones but **untested here**
 — public CI cannot hold EDA licenses. If you have a license and the command
