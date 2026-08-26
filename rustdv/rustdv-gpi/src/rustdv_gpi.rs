@@ -5,8 +5,9 @@
 //!
 //! 1. Handles are opaque and non-null; fallible acquisition is `Result`.
 //! 2. Object-handle lifetime = simulation lifetime (freely `Copy`able IDs).
-//!    Callback handles invalidate on removal/fire — modeled by RAII
-//!    ([`CallbackHandle`]): dropping an unfired handle removes the callback.
+//!    Callback registrations are modeled by RAII ([`CallbackHandle`]):
+//!    dropping a live handle removes its callback, while dropping a fired
+//!    one-shot releases the caller-owned registration handle.
 //! 3. Strings are copied at the boundary, every call.
 //! 4. No unwinding across FFI: every trampoline wraps the closure in
 //!    `catch_unwind`; panics are routed to the panic sink.
@@ -421,8 +422,10 @@ struct CbShared {
 }
 
 /// RAII callback registration. Dropping an unfired/live handle removes the
-/// simulator callback — this is what makes drop-based task cancellation
-/// (design-doc §4.6) clean up trigger registrations for free.
+/// simulator callback. Dropping a fired one-shot still releases the handle
+/// returned by `vpi_register_cb`; simulators do not release that handle when
+/// the callback fires. This is what makes drop-based task cancellation and
+/// completed one-shot triggers clean up their registrations.
 pub struct CallbackHandle {
     shared: Rc<CbShared>,
     raw: *const CbShared,
@@ -439,10 +442,16 @@ impl CallbackHandle {
 
 impl Drop for CallbackHandle {
     fn drop(&mut self) {
+        // `vpi_register_cb` returns a handle owned by the caller. A one-shot
+        // firing removes the scheduled event, but it does not release this
+        // handle. `vpi_remove_cb` is also the release operation for callback
+        // handles and is valid after the event has already left the schedule.
+        unsafe {
+            sys::vpi_remove_cb(self.vpi_h);
+        }
         if !self.shared.released.get() {
             self.shared.released.set(true);
             unsafe {
-                sys::vpi_remove_cb(self.vpi_h);
                 // Reclaim the C-side reference.
                 drop(Rc::from_raw(self.raw));
             }
