@@ -153,7 +153,7 @@ fn decode_status(raw: RawTraceStatus) -> Result<TraceStatus, TraceError> {
         (capability, state) => {
             return Err(TraceError::Host(format!(
                 "invalid Verilator trace status capability={capability} state={state}"
-            )))
+            )));
         }
     };
     Ok(TraceStatus {

@@ -353,9 +353,7 @@ async fn trig_read_only_sees_settled_rtl(ctx: RustdvCtx) -> Result<(), TestError
 // ReadOnly. It may synchronously wait for an ordinary OS worker while the
 // simulator thread — and therefore simulation time — remains held.
 #[rustdv::test]
-async fn stable_point_service_holds_settled_read_only(
-    ctx: RustdvCtx,
-) -> Result<(), TestError> {
+async fn stable_point_service_holds_settled_read_only(ctx: RustdvCtx) -> Result<(), TestError> {
     let input = ctx.dut().signal("comb_in")?;
     let output = ctx.dut().signal("comb_out")?;
     let clk = ctx.dut().signal("clk")?;
@@ -440,10 +438,8 @@ async fn stable_point_service_is_available_after_prior_panic(
     let output = ctx.dut().signal("comb_out")?;
     input.set_u64(0x93);
 
-    let (settled, held_at) = service_read_only(move || {
-        (output.get_u64().unwrap_or(0), rustdv::sim_time_steps())
-    })
-    .await;
+    let (settled, held_at) =
+        service_read_only(move || (output.get_u64().unwrap_or(0), rustdv::sim_time_steps())).await;
     check!(
         settled == (0x93 ^ 0xA5),
         "later stable-point service saw comb_out={settled:#x} before RTL settled"
@@ -461,9 +457,7 @@ async fn stable_point_service_is_available_after_prior_panic(
 // `start_single` is not a port: resolving and reading it proves Verilator's
 // INSPECT control file applied selected internal VPI visibility without FST.
 #[rustdv::test]
-async fn inspect_visibility_selected_internal_is_readable(
-    ctx: RustdvCtx,
-) -> Result<(), TestError> {
+async fn inspect_visibility_selected_internal_is_readable(ctx: RustdvCtx) -> Result<(), TestError> {
     if std::env::var_os("RUSTDV_VERIFY_INSPECT_VISIBILITY").is_none() {
         return Ok(());
     }
@@ -474,7 +468,7 @@ async fn inspect_visibility_selected_internal_is_readable(
         selected.size()
     );
     check!(
-        selected.get_binstr().len() == 1,
+        selected.get_binstr()?.len() == 1,
         "INSPECT could not read a one-bit value from start_single"
     );
     println!("INSPECT INTERNAL VISIBILITY: PASS");
@@ -536,9 +530,7 @@ async fn runtime_trace_uninstrumented_reports_unsupported(
 // arms it, ends at the point that stops it, and never creates or extends the
 // private FST outside that interval.
 #[rustdv::test]
-async fn runtime_trace_capture_is_gated_and_stops_exactly(
-    ctx: RustdvCtx,
-) -> Result<(), TestError> {
+async fn runtime_trace_capture_is_gated_and_stops_exactly(ctx: RustdvCtx) -> Result<(), TestError> {
     if std::env::var_os("RUSTDV_VERIFY_RUNTIME_TRACE").is_none() {
         return Ok(());
     }
@@ -548,7 +540,10 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(
         std::process::id()
     ));
     let _ = std::fs::remove_file(&path);
-    check!(!path.exists(), "trace file existed before capture was armed");
+    check!(
+        !path.exists(),
+        "trace file existed before capture was armed"
+    );
 
     let wrong_phase = rustdv::sim::verilator_trace::status();
     check!(
@@ -601,7 +596,10 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(
         started.state == rustdv::sim::verilator_trace::TraceState::Active,
         "trace host did not enter active state: {started:?}"
     );
-    check!(path.exists(), "arming capture did not create its private FST");
+    check!(
+        path.exists(),
+        "arming capture did not create its private FST"
+    );
 
     Timer::ns(4).await;
     let stopped = service_read_only(rustdv::sim::verilator_trace::stop)
