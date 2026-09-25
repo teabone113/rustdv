@@ -335,6 +335,20 @@ def summarize(samples: list[dict[str, object]]) -> dict[str, object]:
     passed = [sample for sample in samples if sample["status"] == "pass"]
     if not passed:
         return {"status": "expected-failure", "samples": samples}
+    identity = tuple(
+        passed[0][field]
+        for field in ("backend", "transactions", "cycles", "digest", "trace_digest")
+    )
+    for index, sample in enumerate(passed[1:], start=2):
+        actual = tuple(
+            sample[field]
+            for field in ("backend", "transactions", "cycles", "digest", "trace_digest")
+        )
+        if actual != identity:
+            raise RuntimeError(
+                f"{passed[0]['backend']} repeat {index} changed its workload or result: "
+                f"expected {identity}, got {actual}"
+            )
     cps = [float(sample["cycles_per_s"]) for sample in passed]
     elapsed = [float(sample["elapsed_s"]) for sample in passed]
     return {

@@ -1,0 +1,7 @@
+{
+  "comment": "Repeated benchmark samples must agree on workload, cycle count, and result digests before acceptance uses their median timing.",
+  "cmd": ["bash", "output/regression/tests/stream-benchmark-summary/run.sh"],
+  "cwd": ".",
+  "expect_exit": 0,
+  "expect_in_output": ["Ran 2 tests", "OK"]
+}

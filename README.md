@@ -168,20 +168,9 @@ does.
 The portable coroutine/VPI backend remains the default and is the right path
 for event-driven or four-state-sensitive verification. For long synchronous
 Verilator runs, `rustdv-cycle` supplies a second contract: one Rust call per
-clock with plain input/output values.
-
-```rust
-impl CycleModel<CycleInputs, CycleOutputs> for MyModel {
-    fn step(
-        &mut self,
-        inputs: &CycleInputs,
-        outputs: &mut CycleOutputs,
-    ) -> Result<CycleStatus, String> {
-        // protocol models, memory and scoreboards operate on values here
-        Ok(CycleStatus::Continue)
-    }
-}
-```
+clock with plain input/output values. A model implements `CycleModel::step`
+to consume a snapshot of the DUT inputs and update its next outputs; see the
+[complete stream model](rustdv/benchmarks/stream-vpi/src/lib.rs) for an example.
 
 A JSON port schema generates the matching Rust `#[repr(C)]` types and C++
 direct-port adapter. Startup checks the ABI version, sizes, alignments and

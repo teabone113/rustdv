@@ -284,10 +284,14 @@ int main(int argc, char** argv, char**) {
         }
     }
 
-    if (finish(model) == kFail) status = kFail;
     if (status == kFail) {
         const char* message = last_error(model);
         if (message && *message) std::fprintf(stderr, "rustdv-cycle: %s\n", message);
+    }
+    if (finish(model) == kFail) {
+        status = kFail;
+        const char* message = last_error(model);
+        if (message && *message) std::fprintf(stderr, "rustdv-cycle: finish: %s\n", message);
     }
 
     dut->final();

@@ -9,6 +9,9 @@
     "BENCHMARK: PASS backend=rustdv-direct transactions=1000000",
     "CYCLE RSS: warmup_cycle=100000",
     "CYCLE FAILURE: PASS",
+    "BENCHMARK: PASS backend=rustdv-vpi transactions=10000 cycles=12159 digest=5f7dad9deee3ef0d trace=ba6b8bff48e4f1dd",
+    "VPI CYCLE: PASS",
+    "VPI CYCLE FAILURE: PASS",
     "CYCLE ABI: PASS"
   ]
 }

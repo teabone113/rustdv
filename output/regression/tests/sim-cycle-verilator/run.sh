@@ -37,6 +37,30 @@ if [ "$failure_status" -eq 0 ] || ! grep -q "BENCHMARK: FAIL backend=rustdv-dire
 fi
 echo "CYCLE FAILURE: PASS"
 
+# Exercise the portable VPI adapter as well as the direct host. This catches
+# scheduler-phase changes that a direct-cycle-only regression cannot detect.
+(cd rustdv && cargo build --release -p rustdv-stream-bench-vpi)
+VPI_LIB="$CARGO_TARGET_DIR/release/librustdv_stream_bench_vpi.so"
+[ -f "$VPI_LIB" ] || VPI_LIB="$CARGO_TARGET_DIR/release/librustdv_stream_bench_vpi.dylib"
+RUSTDV_BENCH_TRANSACTIONS=10000 RUSTDV_BENCH_SEED=1 \
+    sim/run_verilator.sh "$VPI_LIB" stream_bench "$BUILD/vpi" \
+    "$BENCH/hdl/stream_bench.sv"
+echo "VPI CYCLE: PASS"
+
+set +e
+vpi_failure_output=$(RUSTDV_BENCH_TRANSACTIONS=1000 RUSTDV_BENCH_SEED=1 \
+    RUSTDV_BENCH_INJECT_ERROR=1 \
+    sim/run_verilator.sh "$VPI_LIB" stream_bench "$BUILD/vpi" \
+    "$BENCH/hdl/stream_bench.sv" 2>&1)
+vpi_failure_status=$?
+set -e
+if [ "$vpi_failure_status" -eq 0 ] || ! grep -q "BENCHMARK: FAIL backend=rustdv-vpi" <<<"$vpi_failure_output"; then
+    echo "$vpi_failure_output" >&2
+    echo "VPI CYCLE FAILURE: injected corruption was not propagated" >&2
+    exit 1
+fi
+echo "VPI CYCLE FAILURE: PASS"
+
 case "$(uname -s)" in
     Darwin) cc -dynamiclib -o "$BUILD/abi_mismatch.dylib" \
         output/regression/tests/sim-cycle-verilator/abi_mismatch.c ;;

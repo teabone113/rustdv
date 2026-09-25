@@ -91,7 +91,8 @@ Long, synchronous, two-state workloads may use the optional direct cycle
 backend instead of VPI. Its public Rust contract is value-oriented:
 
 ```rust
-fn step(inputs: &CycleInputs, outputs: &mut CycleOutputs) -> CycleStatus;
+fn step(&mut self, inputs: &CycleInputs, outputs: &mut CycleOutputs)
+    -> Result<CycleStatus, String>;
 ```
 
 `sim/generate_cycle_bindings.py` consumes one JSON schema and emits both the
