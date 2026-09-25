@@ -19,17 +19,24 @@ use Linux, macOS, or WSL rather than native Windows.
 
 ## Verilator modes
 
-| Mode | VPI visibility | Trace | Intended use |
+| Mode | VPI visibility | Instrumentation | Intended use |
 |---|---|---|---|
-| `fast` | Ports of the selected top module only | off | Normal functional regression |
-| `debug` | Top ports plus internals selected by a `.vlt` control file | FST | Focused diagnosis |
-| `framework` | `--public-flat-rw` | off | Small rustdv scheduler/handle probes only |
+| `fast` | Ports of the selected top module only | none | Normal functional regression |
+| `debug` | Top ports plus internals selected by a `.vlt` control file | FST from time zero | Focused diagnosis |
+| `record` | Selected VPI internals | Runtime-gated all-signal FST | On-demand recording |
+| `inspect` | Selected VPI internals | none | Live signal inspection |
+| `coverage` | Top-level ports | Line and expression coverage | RTL coverage runs |
+| `framework` | `--public-flat-rw` | none | Small rustdv scheduler/handle probes only |
 
 FAST does not use global `--public-flat-rw`. The build generates a control
 file under `/tmp` that marks only the selected top module's ports for VPI.
 DEBUG requires `RUSTDV_VERILATOR_CONTROL_FILE`; the TinyALU entry point
-defaults it to `sim/verilator-debug.vlt`. Framework mode is deliberately
-expensive and must not be copied into a large DUT flow.
+defaults it to `sim/verilator-debug.vlt`. RECORD compiles trace support but
+opens its FST only when the runtime API requests capture. COVERAGE writes
+to `RUSTDV_COVERAGE_FILE` after orderly termination, including a failed
+regression. Framework mode is deliberately expensive and must not be copied
+into a large DUT flow. Keep FAST, trace, and coverage build directories
+separate.
 
 ```sh
 # Four-state reference, and the source of exact book transcripts.

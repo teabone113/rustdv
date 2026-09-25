@@ -2,7 +2,7 @@
 
 use rustdv_cycle::{CycleModel, CycleStatus};
 use rustdv_sim::handle::HandleEvent;
-use rustdv_sim::{next_time_step, read_only, Clock, LogicHandle, SimDuration};
+use rustdv_sim::{Clock, LogicHandle, SimDuration, next_time_step, read_only};
 
 /// Run a [`CycleModel`] on the portable VPI scheduler.
 ///

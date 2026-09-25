@@ -42,9 +42,9 @@ pub use rustdv_macros::test;
 pub use rustdv_sim::{first, join};
 
 // --- the curated surface ----------------------------------------------------
-pub use rustdv_runner::{TEST_REGISTRATIONS, TestRegistration};
-pub use rustdv_cycle::{CycleAbiHeader, CycleAbiInfo, CycleModel, CycleStatus, CYCLE_ABI_VERSION};
 pub use cycle_vpi::run_cycle_model_vpi;
+pub use rustdv_cycle::{CYCLE_ABI_VERSION, CycleAbiHeader, CycleAbiInfo, CycleModel, CycleStatus};
+pub use rustdv_runner::{TEST_REGISTRATIONS, TestRegistration};
 
 pub use rustdv_sim::handle::top_module;
 pub use rustdv_sim::log;
@@ -88,16 +88,17 @@ pub mod prelude {
     pub use crate::log;
     pub use crate::{
         Active, AggregateHandle, AnalysisBus, BigUint, CheckSink, Clock, Component, ComponentNode,
-        ConfigDb, CycleModel, CycleStatus, Either, Event, Factory, GetPort, HandleChildren, HandleError, HandleEvent,
-        HierarchyHandle, Lock, Logic, LogicArray, LogicHandle, NullTrigger, ObjectionGuard,
-        PeekPort, PortName, PortOwner, PublishPort, PutPort, Queue, RealHandle, Receiver, Rng,
-        RustdvComp, RustdvCtx, RustdvSeq, RustdvShared, Sender, SeqCtx, SeqError, SeqItem,
-        SeqItemExport, SeqItemPort, Sequence, Sequencer, SimDuration, StringHandle, SubscribePort,
-        Subscriber, TaskHandle, TestError, Timer, TlmFifo, TxnId, build_all, channel, check_all,
-        connect_all, create_seq, end_of_elaboration_all, extract_all, final_all, first2, join2,
-        next_time_step, print_hierarchy, read_only, read_write, report_all, run_component_test,
-        run_extract_check_report, service_read_only, set_seq_override, sim_time_ns, spawn,
-        spawn_named, start_all, start_of_simulation_all, with_timeout,
+        ConfigDb, CycleModel, CycleStatus, Either, Event, Factory, GetPort, HandleChildren,
+        HandleError, HandleEvent, HierarchyHandle, Lock, Logic, LogicArray, LogicHandle,
+        NullTrigger, ObjectionGuard, PeekPort, PortName, PortOwner, PublishPort, PutPort, Queue,
+        RealHandle, Receiver, Rng, RustdvComp, RustdvCtx, RustdvSeq, RustdvShared, Sender, SeqCtx,
+        SeqError, SeqItem, SeqItemExport, SeqItemPort, Sequence, Sequencer, SimDuration,
+        StringHandle, SubscribePort, Subscriber, TaskHandle, TestError, Timer, TlmFifo, TxnId,
+        build_all, channel, check_all, connect_all, create_seq, end_of_elaboration_all,
+        extract_all, final_all, first2, join2, next_time_step, print_hierarchy, read_only,
+        read_write, report_all, run_component_test, run_extract_check_report, service_read_only,
+        set_seq_override, sim_time_ns, spawn, spawn_named, start_all, start_of_simulation_all,
+        with_timeout,
     };
 }
 

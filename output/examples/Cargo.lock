@@ -320,12 +320,17 @@ name = "rustdv"
 version = "0.2.0"
 dependencies = [
  "linkme",
+ "rustdv-cycle",
  "rustdv-gpi",
  "rustdv-macros",
  "rustdv-methodology",
  "rustdv-runner",
  "rustdv-sim",
 ]
+
+[[package]]
+name = "rustdv-cycle"
+version = "0.1.0"
 
 [[package]]
 name = "rustdv-gpi"

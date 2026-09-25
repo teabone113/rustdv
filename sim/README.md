@@ -63,9 +63,10 @@ Useful Verilator controls are:
 
 | Variable | Values | Purpose |
 |---|---|---|
-| `RUSTDV_VERILATOR_MODE` | `fast`, `debug`, `record`, `inspect`, `framework` | visibility and tracing policy |
+| `RUSTDV_VERILATOR_MODE` | `fast`, `debug`, `record`, `inspect`, `coverage`, `framework` | visibility and instrumentation policy |
 | `RUSTDV_VERILATOR_CONTROL_FILE` | path to `.vlt` | selected DEBUG/RECORD/INSPECT internals |
 | `RUSTDV_FST` | output path | DEBUG waveform location |
+| `RUSTDV_COVERAGE_FILE` | output path | required COVERAGE database location |
 | `RUSTDV_VERILATOR_OPT` | `default`, `o3` | generated-model optimization |
 | `RUSTDV_VERILATOR_THREADS` | `1`, `2`, `4` | Verilated model threads |
 | `RUSTDV_VERILATOR_NATIVE` | `0`, `1` | opt in to `-march=native` |
