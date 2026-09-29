@@ -41,6 +41,19 @@ type TraceControl = unsafe extern "C" fn(
     error_capacity: usize,
 ) -> c_int;
 
+#[cfg(unix)]
+type TraceFormatProbe = unsafe extern "C" fn() -> u32;
+
+/// Output format advertised by an optional runtime trace host.
+///
+/// A host with an unrecognized format can still provide the generic control
+/// ABI, but consumers must not guess how to decode its output.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TraceFormat {
+    Fst,
+    Other(u32),
+}
+
 /// State reported by the active simulator's trace host.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TraceState {
@@ -95,6 +108,35 @@ pub fn status() -> Result<TraceStatus, TraceError> {
 /// lets a debug transport choose its backend during testbench startup.
 pub fn host_present() -> bool {
     load_control().is_ok()
+}
+
+/// Identify the host's trace format without entering a simulator phase.
+///
+/// Older Verilator hosts export only the legacy control symbol; they are
+/// known to write FST and are recognized for mixed-version testbenches.
+/// Unknown hosts return `None` rather than being mistaken for FST.
+pub fn host_format() -> Option<TraceFormat> {
+    #[cfg(unix)]
+    {
+        let library = libloading::os::unix::Library::this();
+        // SAFETY: both symbols are supplied by the simulator executable and
+        // remain loaded for the lifetime of the testbench library.
+        unsafe {
+            if let Ok(probe) = library.get::<TraceFormatProbe>(b"rustdv_simulator_trace_format\0") {
+                return Some(match probe() {
+                    1 => TraceFormat::Fst,
+                    other => TraceFormat::Other(other),
+                });
+            }
+            if library
+                .get::<TraceControl>(b"rustdv_verilator_trace_control\0")
+                .is_ok()
+            {
+                return Some(TraceFormat::Fst);
+            }
+        }
+    }
+    None
 }
 
 /// Start capturing the signals retained in the trace-capable model.
@@ -266,6 +308,7 @@ mod tests {
     #[test]
     fn ordinary_rust_test_reports_missing_trace_host() {
         assert!(!host_present());
+        assert_eq!(host_format(), None);
         let error = status().unwrap_err();
         assert!(matches!(error, TraceError::Unavailable(_)));
     }
