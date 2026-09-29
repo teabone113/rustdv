@@ -499,6 +499,12 @@ async fn stable_point_phase_wait_ignores_an_unrelated_wake(
 // load the RustDV testbench or assume a Verilator host is present.
 #[rustdv::test]
 async fn stable_point_trace_capability_is_optional(_ctx: RustdvCtx) -> Result<(), TestError> {
+    if !rustdv::sim::simulator_trace::host_present() {
+        check!(
+            rustdv::sim::simulator_trace::host_format().is_none(),
+            "host without runtime trace control advertised a trace format"
+        );
+    }
     let status = service_read_only(rustdv::sim::simulator_trace::status).await;
     check!(
         matches!(
@@ -520,6 +526,12 @@ async fn runtime_trace_uninstrumented_reports_unsupported(
     if std::env::var_os("RUSTDV_VERIFY_NO_RUNTIME_TRACE").is_none() {
         return Ok(());
     }
+
+    check!(
+        rustdv::sim::simulator_trace::host_format()
+            == Some(rustdv::sim::simulator_trace::TraceFormat::Fst),
+        "Verilator host did not advertise FST format"
+    );
 
     let wrong_phase = rustdv::sim::simulator_trace::status();
     check!(

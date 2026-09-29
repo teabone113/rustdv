@@ -356,6 +356,13 @@ bool settle(Vrustdv_dut& dut, SchedulerStats* stats) {
 
 }  // namespace
 
+// Format metadata is safe to query during testbench startup, before ReadOnly.
+// Other simulator hosts can advertise their own format without borrowing the
+// Verilator/FST decoder or changing the trace-control ABI.
+extern "C" RUSTDV_EXPORT std::uint32_t rustdv_simulator_trace_format() {
+    return 1;  // FST
+}
+
 extern "C" RUSTDV_EXPORT int rustdv_simulator_trace_control(
     std::uint32_t command,
     const char* path,
