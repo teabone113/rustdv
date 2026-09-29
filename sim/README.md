@@ -45,7 +45,7 @@ RUSTDV_VERILATOR_MODE=inspect sim/run_rustdv.sh release verilator
 DEBUG writes an FST under `/tmp/rustdv-$(id -u)/`. FAST exposes only top-level
 ports; DEBUG adds the signals in a Verilator control file and records an FST
 from time zero. RECORD compiles all-signal FST instrumentation but does not
-open a trace until `rustdv::sim::verilator_trace` arms a private runtime
+open a trace until `rustdv::sim::simulator_trace` arms a private runtime
 capture at settled ReadOnly. INSPECT adds selected VPI visibility without FST
 instrumentation. Calling runtime trace control in FAST or INSPECT returns a
 structured unsupported-capability error. The small framework probe alone uses
