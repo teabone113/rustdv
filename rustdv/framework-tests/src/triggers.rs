@@ -494,6 +494,22 @@ async fn stable_point_phase_wait_ignores_an_unrelated_wake(
     Ok(())
 }
 
+// The public trace entry point is callable from either simulator. A build
+// without runtime capture must report the missing capability, not fail to
+// load the RustDV testbench or assume a Verilator host is present.
+#[rustdv::test]
+async fn stable_point_trace_capability_is_optional(_ctx: RustdvCtx) -> Result<(), TestError> {
+    let status = service_read_only(rustdv::sim::simulator_trace::status).await;
+    check!(
+        matches!(
+            status,
+            Err(rustdv::sim::simulator_trace::TraceError::Unavailable(_))
+        ),
+        "uninstrumented simulator returned {status:?} instead of unsupported"
+    );
+    Ok(())
+}
+
 // Runtime trace control is an optional Verilator host capability.  The API
 // must remain callable in ordinary simulator builds and report a structured
 // unavailable result rather than failing to load the VPI module.
@@ -505,20 +521,20 @@ async fn runtime_trace_uninstrumented_reports_unsupported(
         return Ok(());
     }
 
-    let wrong_phase = rustdv::sim::verilator_trace::status();
+    let wrong_phase = rustdv::sim::simulator_trace::status();
     check!(
         matches!(
             wrong_phase,
-            Err(rustdv::sim::verilator_trace::TraceError::WrongState(_))
+            Err(rustdv::sim::simulator_trace::TraceError::WrongState(_))
         ),
         "trace control outside ReadOnly returned {wrong_phase:?}"
     );
 
-    let status = service_read_only(rustdv::sim::verilator_trace::status).await;
+    let status = service_read_only(rustdv::sim::simulator_trace::status).await;
     check!(
         matches!(
             status,
-            Err(rustdv::sim::verilator_trace::TraceError::Unavailable(_))
+            Err(rustdv::sim::simulator_trace::TraceError::Unavailable(_))
         ),
         "uninstrumented simulator returned {status:?} instead of unsupported"
     );
@@ -545,11 +561,11 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(ctx: RustdvCtx) -> Res
         "trace file existed before capture was armed"
     );
 
-    let wrong_phase = rustdv::sim::verilator_trace::status();
+    let wrong_phase = rustdv::sim::simulator_trace::status();
     check!(
         matches!(
             wrong_phase,
-            Err(rustdv::sim::verilator_trace::TraceError::WrongState(_))
+            Err(rustdv::sim::simulator_trace::TraceError::WrongState(_))
         ),
         "trace control outside ReadOnly returned {wrong_phase:?}"
     );
@@ -564,21 +580,21 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(ctx: RustdvCtx) -> Res
     let _ = std::fs::remove_dir_all(&missing_parent);
     let invalid_path = missing_parent.join("capture.fst");
     let (failed, after_failure) = service_read_only(move || {
-        let failed = rustdv::sim::verilator_trace::start(&invalid_path);
-        let after_failure = rustdv::sim::verilator_trace::status();
+        let failed = rustdv::sim::simulator_trace::start(&invalid_path);
+        let after_failure = rustdv::sim::simulator_trace::status();
         (failed, after_failure)
     })
     .await;
     check!(
         matches!(
             failed,
-            Err(rustdv::sim::verilator_trace::TraceError::Host(_))
+            Err(rustdv::sim::simulator_trace::TraceError::Host(_))
         ),
         "unopenable FST path returned {failed:?} instead of a host error"
     );
     let after_failure = after_failure.map_err(|error| TestError::new(error.to_string()))?;
     check!(
-        after_failure.state == rustdv::sim::verilator_trace::TraceState::Idle
+        after_failure.state == rustdv::sim::simulator_trace::TraceState::Idle
             && after_failure.start_time_steps == 0
             && after_failure.end_time_steps == 0
             && after_failure.dump_count == 0,
@@ -589,11 +605,11 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(ctx: RustdvCtx) -> Res
     Timer::ns(2).await;
 
     let start_path = path.clone();
-    let started = service_read_only(move || rustdv::sim::verilator_trace::start(&start_path))
+    let started = service_read_only(move || rustdv::sim::simulator_trace::start(&start_path))
         .await
         .map_err(|error| TestError::new(error.to_string()))?;
     check!(
-        started.state == rustdv::sim::verilator_trace::TraceState::Active,
+        started.state == rustdv::sim::simulator_trace::TraceState::Active,
         "trace host did not enter active state: {started:?}"
     );
     check!(
@@ -602,11 +618,11 @@ async fn runtime_trace_capture_is_gated_and_stops_exactly(ctx: RustdvCtx) -> Res
     );
 
     Timer::ns(4).await;
-    let stopped = service_read_only(rustdv::sim::verilator_trace::stop)
+    let stopped = service_read_only(rustdv::sim::simulator_trace::stop)
         .await
         .map_err(|error| TestError::new(error.to_string()))?;
     check!(
-        stopped.state == rustdv::sim::verilator_trace::TraceState::Idle,
+        stopped.state == rustdv::sim::simulator_trace::TraceState::Idle,
         "trace host remained active after stop: {stopped:?}"
     );
     check!(

@@ -23,6 +23,7 @@ pub mod path;
 pub mod phase;
 pub mod queue;
 pub mod rng;
+pub mod simulator_trace;
 pub mod sync;
 pub mod testing;
 pub mod time;

@@ -356,7 +356,7 @@ bool settle(Vrustdv_dut& dut, SchedulerStats* stats) {
 
 }  // namespace
 
-extern "C" RUSTDV_EXPORT int rustdv_verilator_trace_control(
+extern "C" RUSTDV_EXPORT int rustdv_simulator_trace_control(
     std::uint32_t command,
     const char* path,
     RustdvTraceStatus* status,
@@ -394,6 +394,16 @@ extern "C" RUSTDV_EXPORT int rustdv_verilator_trace_control(
     if (ok) return 0;
     write_trace_error(error, error_capacity, message);
     return command == 1 ? failure_code : 4;
+}
+
+// Keep the original host symbol for already-built RustDV testbench libraries.
+extern "C" RUSTDV_EXPORT int rustdv_verilator_trace_control(
+    std::uint32_t command,
+    const char* path,
+    RustdvTraceStatus* status,
+    char* error,
+    std::size_t error_capacity) {
+    return rustdv_simulator_trace_control(command, path, status, error, error_capacity);
 }
 
 int main(int argc, char** argv, char**) {

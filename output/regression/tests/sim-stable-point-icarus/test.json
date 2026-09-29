@@ -1,10 +1,10 @@
 {
-  "comment": "Opt-in stable-point service runs on the Verilator simulator thread after fixed-point ReadOnly settle, can wait for a worker release with simulation time frozen, then releases normal simulation progress.",
+  "comment": "The same settled ReadOnly service and optional trace entry point work in the Icarus VPI backend without changing testbench Rust code.",
   "cmd": ["bash", "rustdv/framework-tests/run.sh"],
   "cwd": ".",
-  "skip_if_missing": "verilator",
+  "skip_if_missing": "iverilog",
   "env": {
-    "SIM": "verilator",
+    "SIM": "icarus",
     "RUSTDV_TESTCASE": "stable_point_"
   },
   "expect_exit": 0,
